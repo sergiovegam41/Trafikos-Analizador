@@ -40,6 +40,25 @@ export default (io,app)=>{
           return res.send(true) 
         })
 
+        app.get('/getFullLocationByIDs/:idCountri/:idState/:idCity',  async function(req, res) {
+
+          var idCountri = req.params.idCountri;
+          var idState = req.params.idState;
+          var idCity = req.params.idCity;
+
+          let countries = await countriesCollection.find({id:parseInt(idCountri)}).toArray()
+          let state = await statesCollection.find({id:parseInt(idState)}).toArray()
+          let cities = await citiesCollection.find({id:parseInt(idCity)}).toArray()
+
+          
+          return res.send({
+
+            success:true,
+            message: "OK",
+            data: {countries,state,cities}
+          })
+        
+        })
         app.get('/getCountries',  async function(req, res) {
 
           let countries = await countriesCollection.find({}).toArray()
