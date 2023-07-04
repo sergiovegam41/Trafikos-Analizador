@@ -64,6 +64,9 @@ class MtInstansController {
         let MtInstansCollection = DatabaseClient.collection(DBNames.MtInstans);
         let instans = await MtInstansCollection.find({proyect:PROYECT_NAME,type}).toArray()
         const randomHost = instans[Math.floor(Math.random() * instans.length)];
+
+        console.log(instans)
+        console.log(randomHost)
         return randomHost.host
         
     }
