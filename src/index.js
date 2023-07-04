@@ -15,7 +15,6 @@ import { MONGODB_NAME } from './config.js'
         var DatabaseClient = Mongoclient.db(MONGODB_NAME);
         console.log("mongodb connect to "+MONGODB_NAME)
 
-
         routes(app,DatabaseClient)
         
         const server = http.createServer(app)
@@ -35,9 +34,5 @@ import { MONGODB_NAME } from './config.js'
 
     })
    
-
-
- 
-
 })();
 
