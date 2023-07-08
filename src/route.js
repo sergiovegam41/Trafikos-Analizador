@@ -25,7 +25,6 @@ export default (app, DatabaseClient)=>{
     return res.send(true) 
   })
   app.get('/api/getMyAcounts',  validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(DatabaseClient,req,res))
-
   app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => MtAcountsController.getAcountByID(DatabaseClient,req,res))
 
 
@@ -37,7 +36,9 @@ export default (app, DatabaseClient)=>{
       let session = await SessionsController.getCurrentSession(DatabaseClient,req)
       
     if(session){  
+
       return next()  
+      
     }
   
     } catch (error) {

@@ -5,8 +5,6 @@ import { PROYECT_NAME } from '../config.js'
 import http from 'axios';
 
 
-
-
 class MtInstansController {
     
     
