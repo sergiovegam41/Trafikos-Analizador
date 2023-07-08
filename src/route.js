@@ -1,10 +1,20 @@
 import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
+import JobOneMinController from './Controllers/JobOneMinController.js';
 import Utils from './Utils/Utils.js';
 import { DBNames } from './db.js';
+import mysql from 'mysql2'
 
 export default (app, DatabaseClient)=>{
+
+  JobOneMinController.run(DatabaseClient)
+  
+  setInterval(() => {
+    console.log("Ejecutando cada 1 minuto");
+    JobOneMinController.run(DatabaseClient)
+  }, 60000);
+  // 60000 ms = 1 minuto
 
   app.get('/getCountries',  async (req, res) => LocationController.getCountries(DatabaseClient,req,res) )
   app.get('/getStatesByCountrieID/:id',  async (req, res) => LocationController.getStatesByCountrieID(DatabaseClient,req,res))
@@ -17,7 +27,6 @@ export default (app, DatabaseClient)=>{
   app.get('/api/getMyAcounts',  validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(DatabaseClient,req,res))
 
   app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => MtAcountsController.getAcountByID(DatabaseClient,req,res))
-
 
 
 
