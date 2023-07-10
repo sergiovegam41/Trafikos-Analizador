@@ -6,6 +6,7 @@ import { ObjectID } from 'mongodb';
 import { URI_MSQL } from '../config.js'
 
 class AnalyzeSummaryController {
+
     static async run(DatabaseClient){
 
      const connection = mysql.createConnection(URI_MSQL)
@@ -20,11 +21,13 @@ class AnalyzeSummaryController {
 
         let resp
         try {
+
             resp  = await http.get(`${element.mt5_host_url}/AccountSummary?id=${element.connectionID}`);
+        
         } catch (error) {
 
             console.log("[Fallo]")
-            await AcountsCollection.updateOne({_id: ObjectID(element._id)}, { $set: { mt5_host_url: null, connectionID: null} });
+            await AcountsCollection.updateOne({ _id: ObjectID(element._id) }, { $set: { mt5_host_url: null, connectionID: null } });
 
         }
         
