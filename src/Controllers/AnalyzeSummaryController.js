@@ -37,7 +37,6 @@ class AnalyzeSummaryController {
                 function(err, results, fields) { }
             );
 
-
         }
 
      });
