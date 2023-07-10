@@ -3,6 +3,7 @@ import { DBNames } from './../db.js';
 import { ObjectID } from 'mongodb';
 import { PROYECT_NAME } from '../config.js'
 import http from 'axios';
+import mysql from 'mysql2'
 
 
 class MtInstansController {
@@ -39,7 +40,6 @@ class MtInstansController {
             
            //TODO IMPLEMENT MT4
 
-    
         } catch (error) {
 
             console.log(error)

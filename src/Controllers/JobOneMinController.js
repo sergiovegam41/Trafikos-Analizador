@@ -1,10 +1,11 @@
 import AnalyzeSummaryController from './AnalyzeSummaryController.js'
 
+
 class JobOneMinController {
 
-    static run(DatabaseClient) {
+    static run(DatabaseClient, SQLconnection) {
 
-        AnalyzeSummaryController.run(DatabaseClient)
+        AnalyzeSummaryController.run(DatabaseClient, SQLconnection)
 
     }
 

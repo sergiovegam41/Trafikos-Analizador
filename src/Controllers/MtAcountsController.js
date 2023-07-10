@@ -3,10 +3,10 @@ import MtInstansController from "./MtInstansController.js";
 import SessionsController from "./SessionsController.js";
 import http from 'axios';
 import { ObjectID } from 'mongodb';
-
+import mysql from 'mysql2'
+import util from 'util';
 
 class MtAcountsController {
-
 
     static async getMyAcountByUserID(DatabaseClient, req, res) {
 
@@ -22,10 +22,7 @@ class MtAcountsController {
         })
     }
 
-
-
-
-    static async getAcountByID(DatabaseClient, req, res) {
+    static async getAcountByID(DatabaseClient, req, res, SQLconnection) {
 
         var acount_id = req.params.acount_id;
 
@@ -45,9 +42,12 @@ class MtAcountsController {
                     success: true,
                     message: "OK",
                     data: {
+                        
                         accountSummary: resp.data,
                         historyOrders: await this.getHistoryOrdersByInstans(instans),
-                        openedOrders: await this.getHistoryOpenedOrdersByInstans(instans)
+                        openedOrders: await this.getHistoryOpenedOrdersByInstans(instans),
+                        TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id,SQLconnection)
+                        
                     },
                 })
 
@@ -63,6 +63,14 @@ class MtAcountsController {
 
 
 
+    }
+
+    static async getHistoryTraceabilitySummary(acount_id,SQLconnection){
+
+       const query = util.promisify(SQLconnection.query).bind(SQLconnection);
+       const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '"+acount_id+"';");
+       return results;
+        
     }
 
     static async getHistoryOrdersByInstans(instans) {

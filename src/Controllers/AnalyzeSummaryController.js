@@ -1,4 +1,4 @@
-import mysql from 'mysql2'
+// import mysql from 'mysql2'
 import { DBNames } from './../db.js';
 import MtInstansController from "./MtInstansController.js";
 import http from 'axios';
@@ -7,9 +7,8 @@ import { URI_MSQL } from '../config.js'
 
 class AnalyzeSummaryController {
 
-    static async run(DatabaseClient){
+    static async run(DatabaseClient, SQLconnection){
 
-     const connection = mysql.createConnection(URI_MSQL)
 
         
      console.log("AnalyzeSummaryController@run");
@@ -33,7 +32,7 @@ class AnalyzeSummaryController {
         
         if(resp){
 
-            connection.query(
+            SQLconnection.query(
                 "INSERT INTO `summary_detail_users` (`id`, `balance`, `equity`, `account_id`, `created_at`) VALUES (NULL, '"+ resp.data.balance +"', '"+ resp.data.equity +"', '"+ element._id +"', CURRENT_TIMESTAMP); ",
                 function(err, results, fields) { }
             );
