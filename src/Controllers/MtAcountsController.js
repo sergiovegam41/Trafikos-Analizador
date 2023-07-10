@@ -37,17 +37,31 @@ class MtAcountsController {
             try {
 
                 const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
+                let historyOrders = await this.getHistoryOrdersByInstans(instans);
+
+                const profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
+                    if (currentTrade.profit < prevTrade.profit) {
+                        return currentTrade;
+                    } else {
+                        return prevTrade;
+                    }
+                }).profit;
+
+                //console.log(profitOfSmallestTrade);
+
                 return res.send({
 
                     success: true,
                     message: "OK",
                     data: {
-                        
+
                         accountSummary: resp.data,
                         historyOrders: await this.getHistoryOrdersByInstans(instans),
+                        drawnMax: profitOfSmallestTrade,
                         openedOrders: await this.getHistoryOpenedOrdersByInstans(instans),
-                        TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id,SQLconnection)
-                        
+                        TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id, SQLconnection),
+                        flotanteMax: await this.getFlotanteMax(acount_id, SQLconnection)
+
                     },
                 })
 
@@ -65,12 +79,20 @@ class MtAcountsController {
 
     }
 
-    static async getHistoryTraceabilitySummary(acount_id,SQLconnection){
+    static async getHistoryTraceabilitySummary(acount_id, SQLconnection) {
 
-       const query = util.promisify(SQLconnection.query).bind(SQLconnection);
-       const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '"+acount_id+"';");
-       return results;
-        
+        const query = util.promisify(SQLconnection.query).bind(SQLconnection);
+        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' AND DATE(created_at) = CURDATE();");
+        return results;
+
+    }
+    static async getFlotanteMax(acount_id, SQLconnection) {
+
+        const query = util.promisify(SQLconnection.query).bind(SQLconnection);
+        const results = await query("SELECT balance - equity AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
+        // console.log(results);
+        return results[0];
+
     }
 
     static async getHistoryOrdersByInstans(instans) {
