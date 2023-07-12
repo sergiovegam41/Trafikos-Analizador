@@ -6,16 +6,20 @@ import sockets from './sockets.js';
 import routes from './route.js';
 import { PORT } from './config.js';
 import { MONGODB_NAME } from './config.js'
+import { URI_MSQL } from './config.js'
+import mysql from 'mysql2'
 
 ( async ()=>{
 
     await connectDB(function(Mongoclient){
 
+        var SQLClient = mysql.createConnection(URI_MSQL)
 
-        var DatabaseClient = Mongoclient.db(MONGODB_NAME);
+
+        var MongoClient = Mongoclient.db(MONGODB_NAME);
         console.log("mongodb connect to "+MONGODB_NAME)
 
-        routes(app,DatabaseClient)
+        routes(app,MongoClient,SQLClient)
         
         const server = http.createServer(app)
         
@@ -28,7 +32,7 @@ import { MONGODB_NAME } from './config.js'
                 origin:"*"
             }})
 
-            sockets(io,DatabaseClient)
+            sockets(io,MongoClient,SQLClient)
 
         })
 

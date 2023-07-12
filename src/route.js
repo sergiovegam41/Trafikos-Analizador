@@ -1,33 +1,28 @@
 import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
-import JobOneMinController from './Controllers/JobOneMinController.js';
-import Utils from './Utils/Utils.js';
-import { DBNames } from './db.js';
-import mysql from 'mysql2'
-import { URI_MSQL } from './config.js'
+import JobOneMinController from './Controllers/JobOneMinController.js'
 
-
-export default (app, DatabaseClient)=>{
+export default (app, MongoClient, SQLClient)=>{
   
-  let SQLconnection = mysql.createConnection(URI_MSQL)
 
-  setInterval(() => {
-    console.log("Ejecutando cada 1 minuto");
-    JobOneMinController.run(DatabaseClient, SQLconnection)
-  }, 60000);
+  // setInterval(() => {
+  //   // console.log("Ejecutando cada 1 minuto");
+  //   // JobOneMinController.run(MongoClient, SQLClient)
+
+  // }, 60000);
   // 60000 ms = 1 minuto
 
-  app.get('/getCountries',  async (req, res) => LocationController.getCountries(DatabaseClient,req,res) )
-  app.get('/getStatesByCountrieID/:id',  async (req, res) => LocationController.getStatesByCountrieID(DatabaseClient,req,res))
-  app.get('/getCitiesByEtateID/:id',  async (req, res) => LocationController.getCitiesByEtateID(DatabaseClient,req,res))
-  app.get('/getFullLocationByIDs/:idCountri/:idState/:idCity',  async (req, res) => LocationController.getFullLocationByIDs(DatabaseClient,req,res))
+  app.get('/getCountries',  async (req, res) => LocationController.getCountries(MongoClient,req,res) )
+  app.get('/getStatesByCountrieID/:id',  async (req, res) => LocationController.getStatesByCountrieID(MongoClient,req,res))
+  app.get('/getCitiesByEtateID/:id',  async (req, res) => LocationController.getCitiesByEtateID(MongoClient,req,res))
+  app.get('/getFullLocationByIDs/:idCountri/:idState/:idCity',  async (req, res) => LocationController.getFullLocationByIDs(MongoClient,req,res))
   app.get('/ping',  async function(req, res) {
     // Implement Auto clean Tokens 
     return res.send(true) 
   })
-  app.get('/api/getMyAcounts',  validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(DatabaseClient,req,res))
-  app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => MtAcountsController.getAcountByID(DatabaseClient,req,res,SQLconnection))
+  app.get('/api/getMyAcounts',  validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient,req,res))
+  app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => MtAcountsController.getAcountByID(MongoClient,req,res,SQLClient))
 
 
 
@@ -35,7 +30,7 @@ export default (app, DatabaseClient)=>{
 
     try {
 
-      let session = await SessionsController.getCurrentSession(DatabaseClient,req)
+      let session = await SessionsController.getCurrentSession(MongoClient,req)
       
     if(session){  
 

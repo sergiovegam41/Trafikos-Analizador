@@ -1,12 +1,11 @@
-import { MONGODB_URI, MONGODB_NAME, PROYECT_NAME } from '../config.js'
 import { DBNames } from './../db.js';
 
 
 class LocationController{
 
-    static async getCountries(DatabaseClient,req,res){
+    static async getCountries(MongoClient,req,res){
 
-      let countriesCollection = DatabaseClient.collection(DBNames.countries);
+      let countriesCollection = MongoClient.collection(DBNames.countries);
 
       let countries = await countriesCollection.find({}).toArray()
 
@@ -20,11 +19,11 @@ class LocationController{
 
     }
 
-    static async getFullLocationByIDs(DatabaseClient,req,res){
+    static async getFullLocationByIDs(MongoClient,req,res){
 
-        let countriesCollection = DatabaseClient.collection(DBNames.countries);
-        let statesCollection = DatabaseClient.collection(DBNames.states);
-        let citiesCollection = DatabaseClient.collection(DBNames.cities);
+        let countriesCollection = MongoClient.collection(DBNames.countries);
+        let statesCollection = MongoClient.collection(DBNames.states);
+        let citiesCollection = MongoClient.collection(DBNames.cities);
 
         var idCountri = req.params.idCountri;
         var idState = req.params.idState;
@@ -44,9 +43,9 @@ class LocationController{
         })
     } 
 
-    static async getStatesByCountrieID(DatabaseClient,req,res){
+    static async getStatesByCountrieID(MongoClient,req,res){
 
-        let statesCollection = DatabaseClient.collection(DBNames.states);
+        let statesCollection = MongoClient.collection(DBNames.states);
 
         var id = req.params.id;
         let departaments = await statesCollection.find({id_country:parseInt(id)}).toArray()
@@ -60,9 +59,9 @@ class LocationController{
 
     }
 
-    static async getCitiesByEtateID(DatabaseClient,req,res){
+    static async getCitiesByEtateID(MongoClient,req,res){
 
-        let citiesCollection = DatabaseClient.collection(DBNames.cities);
+        let citiesCollection = MongoClient.collection(DBNames.cities);
 
         var id = req.params.id;
         let cities = await citiesCollection.find({id_state:parseInt(id)}).toArray()

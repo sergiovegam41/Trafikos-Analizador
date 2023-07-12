@@ -1,5 +1,5 @@
-import { MONGODB_URI, MONGODB_NAME, PROYECT_NAME } from './config.js'
-import { MongoClient, ServerApiVersion, ObjectID } from 'mongodb';
+import { MONGODB_URI,  } from './config.js'
+import { MongoClient, ServerApiVersion } from 'mongodb';
 
 export class DBNames {
     static countries = "countries";

@@ -3,9 +3,9 @@ import AnalyzeSummaryController from './AnalyzeSummaryController.js'
 
 class JobOneMinController {
 
-    static run(DatabaseClient, SQLconnection) {
+    static run(MongoClient, SQLClient) {
 
-        AnalyzeSummaryController.run(DatabaseClient, SQLconnection)
+        AnalyzeSummaryController.run(MongoClient, SQLClient)
 
     }
 
