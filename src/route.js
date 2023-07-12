@@ -24,6 +24,7 @@ export default (app, MongoClient, SQLClient)=>{
   app.get('/api/getMyAcounts',  validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient,req,res))
   app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => MtAcountsController.getAcountByID(MongoClient,req,res,SQLClient))
 
+  app.post('/api/createAccountsDemoOfChallenger', validationMiddleware, async (req, res) => MtAcountsController.createAccountsDemoOfChallenger(MongoClient, req, res));
 
 
   async function validationMiddleware(req, res, next)  {

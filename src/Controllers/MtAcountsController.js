@@ -31,6 +31,49 @@ class MtAcountsController {
        
     }
 
+    static async createAccountsDemoOfChallenger(MongoClient, req, res) {
+
+        const { servidor, broker, challenger_id, usuario } = req.body;
+
+        const mt5_host_url = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
+        const { access } = (await http.get(`${mt5_host_url}/Search?company=${broker}`)).data
+            .find(company => company.company === broker)
+            .results.find(result => result.name === servidor);
+
+        const [host, port] = access[0].split(':');
+
+        let challengers_collection = MongoClient.collection(DBNames.challengers);
+        let challenger = await challengers_collection.findOne({ _id: ObjectId(challenger_id) });
+
+        let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+
+        for (let index = 0; index < challenger.numero_cuentas; index++) {
+            let apiCreateDemo = `${mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${usuario.user}&AccType=demo&Country=${usuario.country}&City=${usuario.city}&State=${usuario.state}&ZipCode==${usuario.zip}&Address=${usuario.address}&Phone=${usuario.phone}&Email=${usuario.email}&CompanyName=trafikos&Deposit=100000`;
+            const resp = await http.get(apiCreateDemo);
+            const cuenta = resp.data;
+
+            const newAccount = {
+                user_id: usuario.usuario_id.toString(),
+                broker: broker,
+                servidor: servidor,
+                login: cuenta.login.toString(),
+                password: cuenta.password,
+                type: MtInstans.mt5
+            };
+
+            await MtAcountsCollection.insertOne(newAccount);
+            console.log(cuenta);
+        }
+
+        return res.send({
+            success: true,
+            message: "OK",
+            data: { servidor, broker, challenger_id, port, host, usuario, challenger }
+        })
+
+    }
+
+
     static async getAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null,instans = null) {
 
         var acount_id = req.params.acount_id;

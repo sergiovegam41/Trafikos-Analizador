@@ -8,8 +8,8 @@ class InscriptionsController {
 
     static async createAccountDemo(req, res) {
 
-        let session = await SessionsController.getCurrentSession(DatabaseClient, req)
-        let MtAcountsCollection = DatabaseClient.collection(DBNames.MtAcounts);
+        let session = await SessionsController.getCurrentSession(MongoClient, req)
+        let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let Acounts = await MtAcountsCollection.find({ user_id: session.user_id.toString() }).toArray()
 
         // return res.send({
@@ -18,9 +18,10 @@ class InscriptionsController {
         //     data: Acounts
         // })
 
-        // const MtAcountsCollection = DatabaseClient.collection(DBNames.MtAcounts);
+        // const MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
 
         try {
+
             const result = await MtAcountsCollection.insertOne({
                 name: name,
                 balance: balance,
@@ -31,6 +32,7 @@ class InscriptionsController {
                 message: "Account created successfully",
                 data: result.insertedId
             });
+            
         } catch (err) {
             return res.status(500).send({
                 success: false,
