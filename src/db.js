@@ -8,6 +8,7 @@ export class DBNames {
     static MtInstans = "MtInstans";
     static MtAcounts = "MtAcounts";
     static session_tokens = "session_tokens";
+    static challengers = "challengers";
 } 
 
 export const connectDB = async ( onConnect )=>{
