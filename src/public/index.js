@@ -20,6 +20,8 @@ socket.on('server:init',(dataG)=>{
     socket.on('server:analize:data',(data)=>{
 
         console.log(data)
+
+        document.getElementById("body").innerText = JSON.stringify(data)
     
     })
 
