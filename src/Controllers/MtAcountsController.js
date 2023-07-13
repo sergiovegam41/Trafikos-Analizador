@@ -76,13 +76,15 @@ class MtAcountsController {
 
     static async getAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null,instans = null) {
 
-        var acount_id = req.params.acount_id;
+        var acount_id = req.params.acount_id
 
-        // console.log(Acount.login)
+        console.log(acount_id)
 
         if(Acount == null){
             let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
             Acount = await AcountsCollection.findOne({ _id: ObjectID(acount_id) });
+        }else{
+
         }
 
         if(session == null){
@@ -158,7 +160,9 @@ class MtAcountsController {
     static async getHistoryTraceabilitySummary(acount_id, SQLClient) {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
-        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' AND DATE(created_at) = CURDATE() LIMIT 20;");
+        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by created_at desc LIMIT 20;");
+        // console.log(acount_id)
+        // console.log(results)
         return results;
 
     }
@@ -166,7 +170,7 @@ class MtAcountsController {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
         const results = await query("SELECT balance - equity AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
-        // console.log(results);
+        console.log(results);
         return results[0];
 
     }

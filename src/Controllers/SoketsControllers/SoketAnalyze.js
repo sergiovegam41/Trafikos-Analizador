@@ -48,13 +48,13 @@ class SoketAnalizador{
     }
 
     static async emitData(io,clientSocket,MongoClient,SQLClient,data,Acount, session,instans) {
-        // console.log(Acount.login)
+        // console.log( Acount._id.toString())
 
         let resp = await MtAcountsController.getAcountByID(
             MongoClient,
             {        
                 params:{
-                    acount_id: Acount._id 
+                    acount_id: Acount._id.toString()
                 },
                 headers:{authorization: data.token}
             },
