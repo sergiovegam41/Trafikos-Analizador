@@ -4,6 +4,7 @@ import SessionsController from "./SessionsController.js";
 import http from 'axios';
 import { ObjectID } from 'mongodb';
 import util from 'util';
+import { MtInstans } from '../models/MtInstans.js';
 
 class MtAcountsController {
 
@@ -43,7 +44,7 @@ class MtAcountsController {
         const [host, port] = access[0].split(':');
 
         let challengers_collection = MongoClient.collection(DBNames.challengers);
-        let challenger = await challengers_collection.findOne({ _id: ObjectId(challenger_id) });
+        let challenger = await challengers_collection.findOne({ _id: ObjectID(challenger_id) });
 
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
 
