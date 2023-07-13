@@ -78,7 +78,7 @@ class MtAcountsController {
 
         var acount_id = req.params.acount_id
 
-        console.log(acount_id)
+        // console.log(acount_id)
 
         if(Acount == null){
             let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
@@ -170,7 +170,7 @@ class MtAcountsController {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
         const results = await query("SELECT balance - equity AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
-        console.log(results);
+        // console.log(results);
         return results[0];
 
     }

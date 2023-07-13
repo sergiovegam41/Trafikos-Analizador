@@ -66,6 +66,15 @@ class SoketAnalizador{
             instans
         )
 
+        SQLClient.query(
+            "INSERT INTO `summary_detail_users` (`id`, `balance`, `equity`, `account_id`, `created_at`) VALUES (NULL, '"+ resp.data.accountSummary.balance +"', '"+ resp.data.accountSummary.equity +"', '"+ Acount._id.toString() +"', CURRENT_TIMESTAMP); ",
+            function(err, results, fields) {
+
+                // console.log("[Success]")
+
+            }
+        );
+
 
         clientSocket.emit("server:"+this.analize+":data", resp )
         
