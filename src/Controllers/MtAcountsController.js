@@ -160,7 +160,7 @@ class MtAcountsController {
     static async getHistoryTraceabilitySummary(acount_id, SQLClient) {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
-        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by created_at asc LIMIT 20;");
+        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by created_at desc LIMIT 60;");
         // console.log(acount_id)
         // console.log(results)
         return results;
