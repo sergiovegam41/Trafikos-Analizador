@@ -5,13 +5,16 @@ import http from 'axios';
 import { ObjectID } from 'mongodb';
 import util from 'util';
 import { MtInstans } from '../models/MtInstans.js';
-
+import JourneysController from "./JourneysController.js";
+import moment from "moment";
+import { Journeys } from "../models/JourneysStatus.js";
+import { Console } from "console";
 class MtAcountsController {
 
-    static async getMyAcountByUserID(MongoClient, req, res, APIRestFull = true,session = null) {
+    static async getMyAcountByUserID(MongoClient, req, res, APIRestFull = true, session = null) {
 
-        if(session == null){
-           session = await SessionsController.getCurrentSession(MongoClient, req)
+        if (session == null) {
+            session = await SessionsController.getCurrentSession(MongoClient, req)
         }
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let Acounts = await MtAcountsCollection.find({ user_id: session.user_id.toString() }).toArray()
@@ -24,17 +27,16 @@ class MtAcountsController {
             data: Acounts
         }
 
-        if(APIRestFull){
+        if (APIRestFull) {
             return res.send(finalData)
-        }else{
+        } else {
             return finalData
         }
-       
     }
 
     static async createAccountsDemoOfChallenger(MongoClient, req, res) {
 
-        const { servidor, broker, challenger_id, usuario } = req.body;
+        const { servidor, broker, challenger_id, usuario, inscription_id } = req.body;
 
         const mt5_host_url = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
         const { access } = (await http.get(`${mt5_host_url}/Search?company=${broker}`)).data
@@ -48,10 +50,34 @@ class MtAcountsController {
 
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
 
+
+        // }
+
+        const current_Account_Demos = [];
+
         for (let index = 0; index < challenger.numero_cuentas; index++) {
-            let apiCreateDemo = `${mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${usuario.user}&AccType=demo&Country=${usuario.country}&City=${usuario.city}&State=${usuario.state}&ZipCode==${usuario.zip}&Address=${usuario.address}&Phone=${usuario.phone}&Email=${usuario.email}&CompanyName=trafikos&Deposit=100000`;
-            const resp = await http.get(apiCreateDemo);
-            const cuenta = resp.data;
+
+            let cuenta = null;
+            try {
+                let apiCreateDemo = `${mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${usuario.user}&AccType=demo&Country=${usuario.country}&City=${usuario.city}&State=${usuario.state}&ZipCode==${usuario.zip}&Address=${usuario.address}&Phone=${usuario.phone}&Email=${usuario.email}&CompanyName=trafikos&Deposit=100000`;
+
+                const resp = await http.get(apiCreateDemo);
+                cuenta = resp.data;
+            } catch (error) {
+                 console.log("[ELIMINDA]")
+                for (const current_Account_Demo of current_Account_Demos) {
+                   
+                    await MtAcountsCollection.deleteOne({ _id: current_Account_Demo._id });
+                }
+                return res.send({
+                    success: false,
+                    message: "!OK",
+                    data: { "message": "No se pudo crear la cuenta, intenta mas tarde." }
+                })
+            }
+
+
+            // console.log(cuenta)
 
             const newAccount = {
                 user_id: usuario.usuario_id.toString(),
@@ -62,39 +88,44 @@ class MtAcountsController {
                 type: MtInstans.mt5
             };
 
-            await MtAcountsCollection.insertOne(newAccount);
-            console.log(cuenta);
+            const current_Account_Demo = await MtAcountsCollection.insertOne(newAccount);
+            current_Account_Demos.push(current_Account_Demo);
+        }
+
+        for (const current_Account_Demo of current_Account_Demos) {
+            await JourneysController.inizialiteByAccount(MongoClient, req, current_Account_Demo);
         }
 
         return res.send({
             success: true,
             message: "OK",
-            data: { servidor, broker, challenger_id, port, host, usuario, challenger }
+            // data: { servidor, broker, challenger_id, port, host, usuario, challenger }
+            data: { "message": "Suscripcion Aceptada Exitosamente!!!" }
         })
 
     }
 
 
-    static async getAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null,instans = null) {
+    static async getAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null, instans = null) {
 
         var acount_id = req.params.acount_id
 
         // console.log(acount_id)
 
-        if(Acount == null){
+        if (Acount == null) {
             let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
             Acount = await AcountsCollection.findOne({ _id: ObjectID(acount_id) });
-        }else{
+        } else {
 
         }
 
-        if(session == null){
+        if (session == null) {
             session = await SessionsController.getCurrentSession(MongoClient, req)
         }
 
         if (Acount.user_id.toString() == session.user_id.toString()) {
 
-            if(instans == null){
+            if (instans == null) {
                 instans = await MtInstansController.getInstansByAcountID(MongoClient, acount_id)
             }
 
@@ -104,7 +135,7 @@ class MtAcountsController {
                 let historyOrders = await this.getHistoryOrdersByInstans(instans);
 
                 const profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
-                    
+
                     if (currentTrade.profit < prevTrade.profit) {
                         return currentTrade;
                     } else {
@@ -113,7 +144,7 @@ class MtAcountsController {
 
                 }).profit;
 
-                let finalData= {
+                let finalData = {
 
                     success: true,
                     message: "OK",
@@ -130,18 +161,18 @@ class MtAcountsController {
 
                 }
 
-                if(APIRestFull){
+                if (APIRestFull) {
                     return res.send(finalData)
-                }else{
+                } else {
                     return finalData
                 }
 
 
             } catch (error) {
 
-                if(APIRestFull){
+                if (APIRestFull) {
                     return res.status(404).send('BAD_REQUEST');
-                }else{
+                } else {
                     return null
                 }
 
@@ -149,9 +180,9 @@ class MtAcountsController {
 
         }
 
-        if(APIRestFull){
+        if (APIRestFull) {
             return res.status(404).send('BAD_REQUEST');
-        }else{
+        } else {
             return null
         }
 

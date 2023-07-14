@@ -9,6 +9,8 @@ export class DBNames {
     static MtAcounts = "MtAcounts";
     static session_tokens = "session_tokens";
     static challengers = "challengers";
+    static phases = "phases";
+    static journey = "journey";
 } 
 
 export const connectDB = async ( onConnect )=>{
