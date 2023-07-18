@@ -7,13 +7,20 @@ class LocationController {
 
     let codeCountriesCollection = MongoClient.collection(DBNames.codigo_paises);
 
-    let codeCountries = await codeCountriesCollection.find({}).sort({phone_code: 1}).toArray()
+    let codeCountries = await codeCountriesCollection.find({}).sort({ phone_code: 1 }).toArray()
+
+
+    let uniqueData = codeCountries.filter((element, index, self) => {
+      return index === self.findIndex((e) => (
+        e.phone_code === element.phone_code
+      ));
+    });
 
     return res.send({
 
       success: true,
       message: "OK",
-      data: codeCountries
+      data: uniqueData
 
     })
 
