@@ -2,6 +2,7 @@ import { MONGODB_URI,  } from './config.js'
 import { MongoClient, ServerApiVersion } from 'mongodb';
 
 export class DBNames {
+    static codigo_paises = "codigo_paises";
     static countries = "countries";
     static states = "states";
     static cities = "cities";
