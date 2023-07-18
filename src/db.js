@@ -11,6 +11,8 @@ export class DBNames {
     static challengers = "challengers";
     static phases = "phases";
     static journey = "journey";
+    static conditions = "conditions";
+    static parametros = "parametros";
 } 
 
 export const connectDB = async ( onConnect )=>{

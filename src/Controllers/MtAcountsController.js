@@ -50,9 +50,6 @@ class MtAcountsController {
 
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
 
-
-        // }
-
         const current_Account_Demos = [];
 
         for (let index = 0; index < challenger.numero_cuentas; index++) {
@@ -64,9 +61,9 @@ class MtAcountsController {
                 const resp = await http.get(apiCreateDemo);
                 cuenta = resp.data;
             } catch (error) {
-                 console.log("[ELIMINDA]")
+                console.log("[ELIMINDA]")
                 for (const current_Account_Demo of current_Account_Demos) {
-                   
+
                     await MtAcountsCollection.deleteOne({ _id: current_Account_Demo._id });
                 }
                 return res.send({
@@ -76,8 +73,6 @@ class MtAcountsController {
                 })
             }
 
-
-            // console.log(cuenta)
 
             const newAccount = {
                 user_id: usuario.usuario_id.toString(),
@@ -99,7 +94,6 @@ class MtAcountsController {
         return res.send({
             success: true,
             message: "OK",
-            // data: { servidor, broker, challenger_id, port, host, usuario, challenger }
             data: { "message": "Suscripcion Aceptada Exitosamente!!!" }
         })
 
@@ -109,8 +103,6 @@ class MtAcountsController {
     static async getAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null, instans = null) {
 
         var acount_id = req.params.acount_id
-
-        // console.log(acount_id)
 
         if (Acount == null) {
             let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
@@ -219,6 +211,24 @@ class MtAcountsController {
         const resp = await http.get(`${instans.mt5_host_url}/OpenedOrders?id=${instans.connectionID}`);
         return resp.data;
 
+    }
+
+
+    static async validateOrdersInProgressAfterUTC(MongoClient, account_id, hour,instans) {
+        // obtener hora actual y hora limite en UTC
+        const horaActualUtc = moment.utc().startOf('minute');
+        const horaLimiteUtc = moment.utc(hour, 'HH:mm').startOf('minute');
+
+        // retornar false en caso de que todo este ok 
+        if (!horaActualUtc.isSame(horaLimiteUtc)) {
+            return false;
+        }
+
+        // obtener las ordenes abiertas de la cuenta actual
+        const openedOrders = await this.getHistoryOpenedOrdersByInstans(instans);
+
+        // retornar validacion de existencia de ordenes abiertas
+        return openedOrders.length > 0;
     }
 
 

@@ -16,21 +16,22 @@ class MtInstansController {
             let Acount = await AcountsCollection.findOne({_id: ObjectID(AcountID)});
     
             if(Acount.type == MtInstans.mt5){
-
+                // console.log('acctype')
                 let mt5_host_url = Acount.mt5_host_url
+                // console.log('hosturl')
                 let connectionID = Acount.connectionID
-    
+                // console.log('connectionID')
+              
                 if(Acount.mt5_host_url == null || Acount.mt5_host_url == ""){
-
+                   
                     mt5_host_url = await this.takeMtInstans(MongoClient,MtInstans.mt5)
                     const [host, port] = (await http.get(`${mt5_host_url}/Search?company=${Acount.broker}`)).data.find(company => company.company === Acount.broker).results.find(result => result.name === Acount.servidor).access[0].split(':');
                     const resp = await http.get(`${mt5_host_url}/Connect?user=${Acount.login}&password=${Acount.password}&host=${host}&port=${port}`);
                     connectionID = resp.data 
-                    console.log("[NEW CONNECT]")
-    
                 }
     
                 await AcountsCollection.updateOne({_id: ObjectID(AcountID)}, { $set: { lastTime: new Date(), mt5_host_url, connectionID} });
+                // console.log(Acount)
                 return {mt5_host_url: mt5_host_url, connectionID }
                 
             }
