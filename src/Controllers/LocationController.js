@@ -1,79 +1,102 @@
 import { DBNames } from './../db.js';
 
 
-class LocationController{
+class LocationController {
 
-    static async getCountries(MongoClient,req,res){
+  static async getCodeCountries(MongoClient, req, res) {
 
-      let countriesCollection = MongoClient.collection(DBNames.countries);
+    let codeCountriesCollection = MongoClient.collection(DBNames.codigo_paises);
 
-      let countries = await countriesCollection.find({}).toArray()
+    let codeCountries = await codeCountriesCollection.find({}).sort({ phone_code: 1 }).toArray()
 
-      return res.send({
 
-        success:true,
-        message: "OK",
-        data: countries
+    let uniqueData = codeCountries.filter((element, index, self) => {
+      return index === self.findIndex((e) => (
+        e.phone_code === element.phone_code
+      ));
+    });
 
-      })
+    return res.send({
 
-    }
+      success: true,
+      message: "OK",
+      data: uniqueData
 
-    static async getFullLocationByIDs(MongoClient,req,res){
+    })
 
-        let countriesCollection = MongoClient.collection(DBNames.countries);
-        let statesCollection = MongoClient.collection(DBNames.states);
-        let citiesCollection = MongoClient.collection(DBNames.cities);
+  }
 
-        var idCountri = req.params.idCountri;
-        var idState = req.params.idState;
-        var idCity = req.params.idCity;
+  static async getCountries(MongoClient, req, res) {
 
-        let countries = await countriesCollection.find({id:parseInt(idCountri)}).toArray()
-        let state = await statesCollection.find({id:parseInt(idState)}).toArray()
-        let cities = await citiesCollection.find({id:parseInt(idCity)}).toArray()
+    let countriesCollection = MongoClient.collection(DBNames.countries);
 
-        
-        return res.send({
+    let countries = await countriesCollection.find({}).toArray()
 
-          success:true,
-          message: "OK",
-          data: {countries,state,cities}
+    return res.send({
 
-        })
-    } 
+      success: true,
+      message: "OK",
+      data: countries
 
-    static async getStatesByCountrieID(MongoClient,req,res){
+    })
 
-        let statesCollection = MongoClient.collection(DBNames.states);
+  }
 
-        var id = req.params.id;
-        let departaments = await statesCollection.find({id_country:parseInt(id)}).toArray()
+  static async getFullLocationByIDs(MongoClient, req, res) {
 
-        return res.send({
+    let countriesCollection = MongoClient.collection(DBNames.countries);
+    let statesCollection = MongoClient.collection(DBNames.states);
+    let citiesCollection = MongoClient.collection(DBNames.cities);
 
-          success:true,
-          message: "OK",
-          data: departaments
-        })
+    var idCountri = req.params.idCountri;
+    var idState = req.params.idState;
+    var idCity = req.params.idCity;
 
-    }
+    let countries = await countriesCollection.find({ id: parseInt(idCountri) }).toArray()
+    let state = await statesCollection.find({ id: parseInt(idState) }).toArray()
+    let cities = await citiesCollection.find({ id: parseInt(idCity) }).toArray()
 
-    static async getCitiesByEtateID(MongoClient,req,res){
 
-        let citiesCollection = MongoClient.collection(DBNames.cities);
+    return res.send({
 
-        var id = req.params.id;
-        let cities = await citiesCollection.find({id_state:parseInt(id)}).toArray()
-        
-        return res.send({
-          
-          success:true,
-          message: "OK",
-          data: cities
-        })
-        
-    }
+      success: true,
+      message: "OK",
+      data: { countries, state, cities }
+
+    })
+  }
+
+  static async getStatesByCountrieID(MongoClient, req, res) {
+
+    let statesCollection = MongoClient.collection(DBNames.states);
+
+    var id = req.params.id;
+    let departaments = await statesCollection.find({ id_country: parseInt(id) }).toArray()
+
+    return res.send({
+
+      success: true,
+      message: "OK",
+      data: departaments
+    })
+
+  }
+
+  static async getCitiesByEtateID(MongoClient, req, res) {
+
+    let citiesCollection = MongoClient.collection(DBNames.cities);
+
+    var id = req.params.id;
+    let cities = await citiesCollection.find({ id_state: parseInt(id) }).toArray()
+
+    return res.send({
+
+      success: true,
+      message: "OK",
+      data: cities
+    })
+
+  }
 
 }
 

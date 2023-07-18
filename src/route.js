@@ -17,6 +17,7 @@ export default (app, MongoClient, SQLClient) => {
   JourneysController.validateAllJourneys(MongoClient,SQLClient);
 
 
+  app.get('/getCodeCountries', async (req, res) => LocationController.getCodeCountries(MongoClient, req, res))
   app.get('/getCountries', async (req, res) => LocationController.getCountries(MongoClient, req, res))
   app.get('/getStatesByCountrieID/:id', async (req, res) => LocationController.getStatesByCountrieID(MongoClient, req, res))
   app.get('/getCitiesByEtateID/:id', async (req, res) => LocationController.getCitiesByEtateID(MongoClient, req, res))
