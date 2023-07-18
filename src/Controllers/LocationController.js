@@ -7,7 +7,7 @@ class LocationController {
 
     let codeCountriesCollection = MongoClient.collection(DBNames.codigo_paises);
 
-    let codeCountries = await codeCountriesCollection.find({}).toArray()
+    let codeCountries = await codeCountriesCollection.find({}).sort({phone_code: 1}).toArray()
 
     return res.send({
 
