@@ -16,6 +16,7 @@ class MtAcountsController {
         if (session == null) {
             session = await SessionsController.getCurrentSession(MongoClient, req)
         }
+
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let Acounts = await MtAcountsCollection.find({ user_id: session.user_id.toString() }).toArray()
 
@@ -87,6 +88,7 @@ class MtAcountsController {
             current_Account_Demos.push(current_Account_Demo);
         }
 
+
         for (const current_Account_Demo of current_Account_Demos) {
             await JourneysController.inizialiteByAccount(MongoClient, req, current_Account_Demo);
         }
@@ -122,8 +124,10 @@ class MtAcountsController {
             }
 
             try {
-
+                // console.log("resp: ")
                 const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
+
+
                 let historyOrders = await this.getHistoryOrdersByInstans(instans);
 
                 const profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
@@ -161,6 +165,7 @@ class MtAcountsController {
 
 
             } catch (error) {
+                // console.log("respc: ")
 
                 if (APIRestFull) {
                     return res.status(404).send('BAD_REQUEST');
@@ -214,7 +219,7 @@ class MtAcountsController {
     }
 
 
-    static async validateOrdersInProgressAfterUTC(MongoClient, account_id, hour,instans) {
+    static async validateOrdersInProgressAfterUTC(MongoClient, account_id, hour, instans) {
         // obtener hora actual y hora limite en UTC
         const horaActualUtc = moment.utc().startOf('minute');
         const horaLimiteUtc = moment.utc(hour, 'HH:mm').startOf('minute');

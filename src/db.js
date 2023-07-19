@@ -14,6 +14,8 @@ export class DBNames {
     static journey = "journey";
     static conditions = "conditions";
     static parametros = "parametros";
+    static traceability_challenger = "traceability_challenger";
+    static user_copy = "user_copy";
 } 
 
 export const connectDB = async ( onConnect )=>{

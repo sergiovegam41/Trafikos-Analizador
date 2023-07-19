@@ -1,35 +1,34 @@
 import { DBNames } from "../db.js";
 import SessionsController from "./SessionsController.js";
 import http from 'axios';
-import { ObjectID } from 'mongodb';
+import { ObjectID, ObjectId } from 'mongodb';
 import moment from "moment";
 import vm from "vm";
 import MtInstansController from "./MtInstansController.js";
 import MtAcountsController from "./MtAcountsController.js";
+import { MtInstans } from '../models/MtInstans.js';
+
 
 import { Journeys } from "../models/JourneysStatus.js";
 
 class JourneysController {
     // static journeys_collection = MongoClient.collection(DBNames.MtAcounts);
 
-    static async inizialiteByAccount(MongoClient, req, current_Account_Demo) {
+    static async inizialiteByAccount(MongoClient, req, current_Account_Demo, sortin = "0") {
 
         const { challenger_id, inscription_id } = req.body;
 
         let phases_colelction = MongoClient.collection(DBNames.phases);
-        let phase = await phases_colelction.findOne({ challenge_id: challenger_id, sortin: "0" });
+        let phase = await phases_colelction.findOne({ challenge_id: challenger_id, sortin: sortin });
         // console.log(challenger_id);
         const diasASumarMin = parseInt(phase.duration_min);
         const diasASumarMax = parseInt(phase.duration_max);
         let fechaActual = moment();
-        console.log(fechaActual);
-        console.log(diasASumarMax, fechaActual.clone().add(diasASumarMax, 'days'))
-        console.log(diasASumarMin, fechaActual.clone().add(diasASumarMin, 'days'))
 
         let journeys_collection = MongoClient.collection(DBNames.journey);
         const newJourney = {
             current_phase: phase._id.toString(),
-            status: Journeys.pendiente,
+            status: Journeys.unestarted,
             active: 1,
             current_account: current_Account_Demo.insertedId.toString(),
             challenger_id: challenger_id,
@@ -43,63 +42,267 @@ class JourneysController {
         return journey_insert;
     }
 
-    static async validateAllJourneys(MongoClient, SQLClient) {
+    static async validateWinAllJourneys(MongoClient, SQLClient) {
+
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
 
 
+
         for (const element of journeys) {
-            console.log('----------validateOne---------------')
-            let val = await this.validateOne(MongoClient, SQLClient, element);
+            console.log('~ Validar Winers ~')
 
+
+            const dateFinishMin = moment(element.date_finish_min);
+            const now = moment();
+            const isValidDate = dateFinishMin.isBefore(now);
+
+            // Validar solo los journeys que tienen los dias minimos tradeados
+
+            if (isValidDate) {
+
+               console.log('[EN_RANGO_DE_FECHAS]')
+
+
+                let phases_colelction = MongoClient.collection(DBNames.phases);
+                let phase = await phases_colelction.findOne({ _id: ObjectID(element.phase_id) });
+
+                let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+                let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(element.current_account) });
+                const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
+
+                const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
+
+
+                // Se valida si el jurnie cumple con el profit para ganar la fase
+                if (resp.data.accountSummary.profit >= phase.require_profit) {
+
+                    console.log('[CUMPLE_CON_EL_PROFIT_MINIMO]')
+
+                    let journeys_collection = MongoClient.collection(DBNames.journey);
+                    await journeys_collection.updateOne({ _id: element._id }, {
+                        $set: {
+                            status: Journeys.win,
+                            wined_date: moment(),
+
+                        }
+                    });
+
+                    console.log('[JOURNEY_WIN]')
+
+
+                    let NextPhase = await phases_colelction.findOne({ challenge_id: element.challenger_id, sortin: (parseInt(phase.sortin) + 1).toString() });
+                    
+                    // se valida cual es la siguiente phase
+                    if (NextPhase) {
+
+                        console.log('[EXISTE_SIGUIENTE_FASE]')
+
+
+                        if(!NextPhase.is_production){
+
+                            console.log('[FASE_DEMO]')
+
+
+                            let CopyUserCollection = MongoClient.collection(DBNames.MtAcounts);
+                            let user_copy = await CopyUserCollection.findOne({ user_mysql_id: (account_by_journey.user_id) });
+    
+                            if(user_copy){
+                                
+
+                                try{
+                                    const [host, port] = (await http.get(`${instans.mt5_host_url}/Search?company=${account_by_journey.broker}`)).data.find(company => company.company === account_by_journey.broker).results.find(result => result.name === account_by_journey.servidor).access[0].split(':');
+                                    console.log(host,port)
+    
+                                    let apiCreateDemo = `${instans.mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${user_copy.user}&AccType=demo&Country=${user_copy.country}&City=${user_copy.city}&State=${user_copy.state}&ZipCode==${user_copy.zip}&Address=${user_copy.address}&Phone=${user_copy.phone}&Email=${user_copy.email}&CompanyName=trafikos&Deposit=100000`;
+                                    const resp = await http.get(apiCreateDemo);
+                                    cuenta = resp.data;
+
+
+                                    const newAccount = {
+                                        user_id: account_by_journey.user_id,
+                                        broker: account_by_journey.broker,
+                                        servidor: account_by_journey.servidor,
+                                        login: cuenta.login.toString(),
+                                        password: cuenta.password,
+                                        type: MtInstans.mt5
+                                    };
+                        
+
+                                    const current_Account_Demo = await MtAcountsCollection.insertOne(newAccount);
+        
+                                    console.log('[CUENTA_CREADA]')
+
+                                    const diasASumarMin = parseInt(NextPhase.duration_min);
+                                    const diasASumarMax = parseInt(NextPhase.duration_max);
+                                    let fechaActual = moment();
+        
+                                    const newJourney = {
+                                        current_phase: NextPhase._id.toString(),
+                                        status: Journeys.unestarted,
+                                        active: 1,
+                                        current_account: current_Account_Demo.insertedId.toString(),
+                                        challenger_id: element.challenger_id,
+                                        inscription_id: element.inscription_id,
+                                        date_finish_max: fechaActual.clone().add(diasASumarMax, 'days'),
+                                        date_finish_min: fechaActual.clone().add(diasASumarMin, 'days')
+                                    };
+        
+                                    const journey_insert = await journeys_collection.insertOne(newJourney);
+
+                                    console.log('[JOURNEY_READY_unestarted]')
+
+                                    
+                                }catch(error){
+
+                                    console.log('[ERROR]')
+                                    console.log('~ al crear la cuenta y journie')
+
+
+                                }
+    
+                                //TODO: MANDAR CORREO DE QUE GANO LA FASE ANTERIOR, Y YA ESTA LISTO PARA INICAR LA SIGUIENTE FASE
+
+    
+                               
+    
+                            }else{
+                                console.log('[ERROR]')
+                                console.log('~no tiene user copy')
+
+                            }
+
+                        }else{
+
+                            // TODO: GESTION PARA JOURNEY EN FASE DE PRODUCCION
+                            // crear los journey sin cuentas en estado unestarted y sin fechas
+                            // admin, valida y vincula las cuentas de forma manual por cada JOURNEY que tenga una fase de produccion
+                            // al final el admin cambia de valida, y se cambia el estado, se agregan las fechas, se coloca en estado unestarted, para que el participante lo empieze
+
+
+
+                        }
+
+
+                        
+                    } else {
+                        // TO DO IMPLEMENTAR PASO a LA ULTIMA FASE
+                        // TODO CORREGIDO: IMPLEMENTAR FINAL DEL CHALLENGER
+                        console.log('[CHALLENGER_COMPLETADO]')
+
+
+                    }
+                }
+            }else{
+
+                console.log('[NO_ESTA_EN_RANGO]')
+
+            }
+            
         }
+    }
 
+    static async validateFailAllJourneys(MongoClient, SQLClient) {
 
-         journeys.forEach(async element => {
+        let journeys_collection = MongoClient.collection(DBNames.journey);
+        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
 
-         
+        for (const element of journeys) {
+            let val = await this.validateOne(MongoClient, SQLClient, element);
+            console.log(val)
+            if (!val.validation) {
 
-            // if (val) {
-            //     console.log('bien validado')
-            // } else {
-            //     // terminar viaje
-            //     console.log('Finalizar Viaje');
-            // }
+                let journeys_collection = MongoClient.collection(DBNames.journey);
+                await journeys_collection.updateOne({ _id: element._id }, {
+                    $set: {
+                        status: Journeys.failed,
+                        failed_message: val.message,
+                        failed_parameter: val.parameter,
+                        failed_date: moment()
+                    }
+                });
 
-        });
+            } else {
+                console.log('TODO OK');
+            }
+        }
     }
 
     static async validateOne(MongoClient, SQLClient, journey) {
-    
+
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(journey.current_account) });
 
         const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
-        console.log(instans)
         // traer la cuenta del viaje actual
 
-        // // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
-        // let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
-        //     account_by_journey._id.toString(),
-        //     '00:00', instans);
 
-        // // validacion negativa
-        // if (validationUTC) return false;
+        const dateFinishMax = moment(journey.date_finish_max);
+        const now = moment();
+        const isValidDate = dateFinishMax.isBefore(now);
 
-        // // obtener condiciones del viaje
-        // let conditions = await this.getConditionsJourneyByPhase(MongoClient, journey)
+        if (isValidDate) return { validation: false, message: 'El Reto ha concluido sin exito :(', parameter: 'time_exceeded' };
 
-        // // preparar colleccion de parametros
-        // let parametrosCollection = MongoClient.collection(DBNames.parametros);
+        // console.log()
 
-        // // recorrer condiciones y validar
-        // let isFailed = false;
-        // // conditions.forEach(async condition => {
-        // //     let parametro = await parametrosCollection.findOne({ _id: ObjectID(condition.parameter) });
-        // //     await this.isFailed(MongoClient, SQLClient, account_by_journey, parametro.name, condition, instans)
-        // // });
+        // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
+        let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
+            account_by_journey._id.toString(),
+            '00:00', instans);
 
-        // return true;
+        // validacion negativa
+        if (validationUTC) return { validation: false, message: 'Tienes ordenes abiertas a las 00:00UTC', parameter: 'validacion 00:00UTC' };
+
+        // obtener condiciones del viaje
+        let conditions = await this.getConditionsJourneyByPhase(MongoClient, journey)
+
+        // preparar colleccion de parametros
+        let parametrosCollection = MongoClient.collection(DBNames.parametros);
+        let AccountData = await this.getData(MongoClient, SQLClient, account_by_journey, instans)
+
+        // recorrer condiciones y validar
+        let isFailed = false;
+        let motivoFailed = '';
+        let parameterFailed = '';
+        for (const condition of conditions) {
+            if (!isFailed) {
+                let parametro = await parametrosCollection.findOne({ _id: ObjectID(condition.parameter) });
+                let valFailed = await this.isFailed(parametro.name, condition, AccountData)
+                if (valFailed.validation) {
+                    isFailed = true;
+                    motivoFailed = valFailed.message;
+                    parameterFailed = valFailed.parameter;
+                    break;
+                }
+            }
+
+        }
+
+        if (isFailed) return { validation: false, message: motivoFailed, parameter: parameterFailed };
+
+        let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData)
+
+        if (!validateDailyTrade.validation) return { validation: false, message: validateDailyTrade.message, parameter: validateDailyTrade.parameter };
+
+        return { validation: true, message: 'no ha perdido', parameter: null };
+    }
+
+    static async validateDailyTrade(MongoClient, SQLClient, AccountData) {
+
+        const orders = AccountData.data.historyOrders.orders;
+
+        // Obtener fecha/hora de inicio y fin del día anterior
+        const start = moment().utc().subtract(1, 'day').startOf('day').add(1, 'minute');
+        const end = moment().utc().subtract(1, 'day').endOf('day');
+
+        // Filtrar órdenes 
+        const yesterdayOrders = orders.filter(order => {
+            const orderTime = moment(order.openTime);
+            return orderTime.isBetween(start, end);
+        });
+
+
+        return { validation: yesterdayOrders.length > 0, message: 'Inactividad de tradeo', parameter: 'inactivity' };
     }
 
     static async getConditionsJourneyByPhase(MongoClient, journey) {
@@ -110,41 +313,31 @@ class JourneysController {
         return conditions;
     }
 
+
     static async validateWin(MongoClient, valueWin) {
 
     }
 
-    static async isFailed(MongoClient, SQLClient, account_by_journey, parametro, condition, instans) {
+    static async isFailed(parametro, condition, AccountData) {
 
-        let resp = await this.getData(MongoClient, SQLClient, account_by_journey, instans)
-
-        console.log('respuesta')
-        console.log(resp != null ? 'condatos' : 'sindatos')
-
+        let b = null;
         switch (parametro) {
             case 'Flotante':
-                // calcular flotante
-                let b = null;
-                return vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`);
+                b = AccountData.data.flotanteMax.flotante ?? 0;
             case 'DrawnMax':
-            // calcular drawnMAx
-
+                b = AccountData.data.drawnMax ?? 0;
             case 'Equidad':
-            // calcular equidad
+                b = AccountData.data.accountSummary.equity;
             case 'Profit':
-
-            case 'Dias Minimos tardeados':
-
+                b = AccountData.data.accountSummary.profit;
         }
 
-        return true;
+        return { validation: !(vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`)), message: `el ${parametro} es ${condition.conditional} a  ${b}, HAZ PERDIDO :( `, parameter: parametro }
     }
 
 
 
     static async getData(MongoClient, SQLClient, Acount, instans) {
-
-
 
         let resp = await MtAcountsController.getAcountByID(
             MongoClient,

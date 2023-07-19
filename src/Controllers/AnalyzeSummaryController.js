@@ -14,8 +14,8 @@ class AnalyzeSummaryController {
         let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let Acounts = await AcountsCollection.find({ connectionID: { $ne: null, $ne: "" } }).toArray();
 
-        Acounts.forEach(async element => {
-
+        for (const element of Acounts) {
+        
             let resp
             try {
 
@@ -41,9 +41,9 @@ class AnalyzeSummaryController {
                 );
 
             }
-
-        });
-
+        
+        }
+       
     }
 }
 

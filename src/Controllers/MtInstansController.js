@@ -6,57 +6,74 @@ import http from 'axios';
 
 
 class MtInstansController {
-    
-    
-    static async getInstansByAcountID(MongoClient,AcountID){
+
+
+    static async getInstansByAcountID(MongoClient, AcountID) {
 
         try {
-            
+
             let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-            let Acount = await AcountsCollection.findOne({_id: ObjectID(AcountID)});
-    
-            if(Acount.type == MtInstans.mt5){
-                // console.log('acctype')
+            let Acount = await AcountsCollection.findOne({ _id: ObjectID(AcountID) });
+
+            if (Acount.type == MtInstans.mt5) {
                 let mt5_host_url = Acount.mt5_host_url
-                // console.log('hosturl')
                 let connectionID = Acount.connectionID
-                // console.log('connectionID')
-              
-                if(Acount.mt5_host_url == null || Acount.mt5_host_url == ""){
-                   
-                    mt5_host_url = await this.takeMtInstans(MongoClient,MtInstans.mt5)
-                    const [host, port] = (await http.get(`${mt5_host_url}/Search?company=${Acount.broker}`)).data.find(company => company.company === Acount.broker).results.find(result => result.name === Acount.servidor).access[0].split(':');
-                    const resp = await http.get(`${mt5_host_url}/Connect?user=${Acount.login}&password=${Acount.password}&host=${host}&port=${port}`);
-                    connectionID = resp.data 
+
+                if (Acount.mt5_host_url == null || Acount.mt5_host_url == "") {
+
+                    let resp = await this.connectMt5Api(MongoClient, Acount)
+                    mt5_host_url = resp.mt5_host_url
+                    connectionID = resp.connectionID
+                    console.log("[NEW CONNECTION]")
+
+                } else {
+                    try {
+                        const resp = (await http.get(`${mt5_host_url}/CheckConnect?id=${connectionID}`))
+                        console.log("[CONNECTED]")
+
+                    } catch (error) {
+                        let resp = await this.connectMt5Api(MongoClient, Acount)
+                        mt5_host_url = resp.mt5_host_url
+                        connectionID = resp.connectionID
+                        console.log("[RECONNECTED]")
+
+                    }
                 }
-    
-                await AcountsCollection.updateOne({_id: ObjectID(AcountID)}, { $set: { lastTime: new Date(), mt5_host_url, connectionID} });
-                // console.log(Acount)
-                return {mt5_host_url: mt5_host_url, connectionID }
-                
+
+                await AcountsCollection.updateOne({ _id: ObjectID(AcountID) }, { $set: { lastTime: new Date(), mt5_host_url, connectionID } });
+                return { mt5_host_url, connectionID }
             }
-    
+
             return null
-            
-           //TODO IMPLEMENT MT4
+
+            //TODO IMPLEMENT MT4
 
         } catch (error) {
 
-            console.log(error)
+            // console.log(error)
             return null
 
         }
-       
+
 
     }
 
-    static async takeMtInstans( MongoClient, type ){
-    
+    static async connectMt5Api(MongoClient, Acount) {
+        let mt5_host_url = await this.takeMtInstans(MongoClient, MtInstans.mt5)
+        const [host, port] = (await http.get(`${mt5_host_url}/Search?company=${Acount.broker}`)).data.find(company => company.company === Acount.broker).results.find(result => result.name === Acount.servidor).access[0].split(':');
+        const resp = await http.get(`${mt5_host_url}/Connect?user=${Acount.login}&password=${Acount.password}&host=${host}&port=${port}`);
+        let connectionID = resp.data;
+        return { mt5_host_url, connectionID }
+
+    }
+
+    static async takeMtInstans(MongoClient, type) {
+
         let MtInstansCollection = MongoClient.collection(DBNames.MtInstans);
-        let instans = await MtInstansCollection.find({proyect:PROYECT_NAME,type}).toArray()
+        let instans = await MtInstansCollection.find({ proyect: PROYECT_NAME, type }).toArray()
         const randomHost = instans[Math.floor(Math.random() * instans.length)];
         return randomHost.host
-        
+
     }
 
 }
