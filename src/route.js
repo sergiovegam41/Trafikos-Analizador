@@ -23,12 +23,14 @@ export default (app, MongoClient, SQLClient) => {
   app.get('/getStatesByCountrieID/:id', async (req, res) => LocationController.getStatesByCountrieID(MongoClient, req, res))
   app.get('/getCitiesByEtateID/:id', async (req, res) => LocationController.getCitiesByEtateID(MongoClient, req, res))
   app.get('/getFullLocationByIDs/:idCountri/:idState/:idCity', async (req, res) => LocationController.getFullLocationByIDs(MongoClient, req, res))
-  app.get('/inizialiteJourneyById', async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
+  // app.get('/inizialiteJourneyById', async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
 
   app.get('/ping', async function (req, res) {
     // Implement Auto clean Tokens 
     return res.send(true)
   })
+  app.get('/api/inizialiteJourneyById',validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
+
   app.get('/api/getMyAcounts', validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient, req, res))
   app.get('/api/inizialiteJourneyById', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
   app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
