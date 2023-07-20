@@ -14,11 +14,12 @@ import { Journeys } from "../models/JourneysStatus.js";
 class JourneysController {
     // static journeys_collection = MongoClient.collection(DBNames.MtAcounts);
 
-    static async createByAccount(MongoClient, req, current_Account_Demo) {
+    static async createByAccount(MongoClient, req, current_Account_Demo,sortin = "0") {
 
         const { challenger_id, inscription_id } = req.body;
 
-
+        let phases_colelction = MongoClient.collection(DBNames.phases);
+        let phase = await phases_colelction.findOne({ challenge_id: challenger_id, sortin: sortin });
 
         let journeys_collection = MongoClient.collection(DBNames.journey);
         const newJourney = {
