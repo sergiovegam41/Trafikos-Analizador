@@ -14,9 +14,9 @@ class MtAcountsController {
 
     static async getMyAcountByUserID(MongoClient, req, res, APIRestFull = true, session = null) {
 
-        // if (session == null) {
-        //     session = await SessionsController.getCurrentSession(MongoClient, req)
-        // }
+        if (session == null) {
+            session = await SessionsController.getCurrentSession(MongoClient, req)
+        }
 
 
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
