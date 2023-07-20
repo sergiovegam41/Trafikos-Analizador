@@ -14,7 +14,7 @@ import { Journeys } from "../models/JourneysStatus.js";
 class JourneysController {
     // static journeys_collection = MongoClient.collection(DBNames.MtAcounts);
 
-    static async createByAccount(MongoClient, req, current_Account_Demo,sortin = "0") {
+    static async createByAccount(MongoClient, req, current_Account_Demo, sortin = "0") {
 
         const { challenger_id, inscription_id } = req.body;
 
@@ -141,19 +141,19 @@ class JourneysController {
                     console.log('[JOURNEY_WIN]')
 
 
-                    let NextPhase = await phases_colelction.findOne({ challenge_id: element.challenger_id, sortin: (parseInt(phase.sortin) + 1).toString() });
+                    let NextPhase = null;
+
+                    if (!phase.is_production) {
+                        NextPhase = await phases_colelction.findOne({ challenge_id: element.challenger_id, sortin: (parseInt(phase.sortin) + 1).toString() });
+                    } else {
+                        NextPhase = phase;
+                    }
 
                     // se valida cual es la siguiente phase
                     if (NextPhase) {
-
                         console.log('[EXISTE_SIGUIENTE_FASE]')
-
-
                         if (!NextPhase.is_production) {
-
                             console.log('[FASE_DEMO]')
-
-
                             let CopyUserCollection = MongoClient.collection(DBNames.MtAcounts);
                             let user_copy = await CopyUserCollection.findOne({ user_mysql_id: (account_by_journey.user_id) });
 
@@ -166,8 +166,7 @@ class JourneysController {
 
                                     let apiCreateDemo = `${instans.mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${user_copy.user}&AccType=demo&Country=${user_copy.country}&City=${user_copy.city}&State=${user_copy.state}&ZipCode==${user_copy.zip}&Address=${user_copy.address}&Phone=${user_copy.phone}&Email=${user_copy.email}&CompanyName=trafikos&Deposit=100000`;
                                     const resp = await http.get(apiCreateDemo);
-                                    cuenta = resp.data;
-
+                                    cuenta = resp.data;                                             
 
                                     const newAccount = {
                                         user_id: account_by_journey.user_id,
@@ -207,15 +206,9 @@ class JourneysController {
 
                                     console.log('[ERROR]')
                                     console.log('~ al crear la cuenta y journie')
-
-
                                 }
 
                                 //TODO: MANDAR CORREO DE QUE GANO LA FASE ANTERIOR, Y YA ESTA LISTO PARA INICAR LA SIGUIENTE FASE
-
-
-
-
                             } else {
                                 console.log('[ERROR]')
                                 console.log('~no tiene user copy')
