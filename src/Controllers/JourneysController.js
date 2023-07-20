@@ -73,21 +73,21 @@ class JourneysController {
                 return res.send({
                     success: true,
                     message: "OK",
-                    data: { "message": "Viaje Inicializado." }
+                    data: { "message": "Cuenta Inicializada! :)." }
                 })
             } else {
                 console.log('4')
                 return res.send({
                     success: true,
                     message: "FAIL",
-                    data: { "message": "El viaje ya estaba inicializado" }
+                    data: { "message": "La Cuenta ya estaba inicializado" }
                 })
             }
         } catch (error) {
             return res.send({
                 success: false,
                 message: "FAIL",
-                data: { "message": "error al inicializar viaje." }
+                data: { "message": "error al inicializar Cuenta." }
             })
         }
 

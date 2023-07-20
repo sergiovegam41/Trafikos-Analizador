@@ -30,6 +30,8 @@ class MtAcountsController {
             Acounts.push(AcountswhithJourney);
         }
 
+        console.log(Acounts)
+
         let finalData = {
 
             success: true,
