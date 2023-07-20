@@ -44,43 +44,6 @@ class MtAcountsController {
         }
     }
 
-    static async getMyAcountByUserID(MongoClient, APIRestFull = true, session = null) {
-
-        // if (session == null) {
-        //     session = await SessionsController.getCurrentSession(MongoClient, req)
-        // }
-
-
-        let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-        let Acounts = await MtAcountsCollection.find({ user_id: "3", "origin": AccountsType.withoutJourney }).toArray()
-        console.log(Acounts)
-
-        let journeys_collection = MongoClient.collection(DBNames.journey);
-        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
-        console.log(journeys)
-
-        for (const joruney of journeys) {
-            let AcountswhithJourney = await MtAcountsCollection.findOne({ _id: ObjectID(joruney.current_account) })
-            console.log(AcountswhithJourney)
-            Acounts.push(AcountswhithJourney);
-
-        }
-
-        console.log(Acounts)
-
-        // let finalData = {
-
-        //     success: true,
-        //     message: "OK",
-        //     data: Acounts
-        // }
-
-        // if (APIRestFull) {
-        //     return res.send(finalData)
-        // } else {
-        //     return finalData
-        // }
-    }
 
     static async createAccountsDemoOfChallenger(MongoClient, req, res) {
 

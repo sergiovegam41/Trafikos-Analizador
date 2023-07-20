@@ -23,7 +23,7 @@ export default (app, MongoClient, SQLClient) => {
   app.get('/getStatesByCountrieID/:id', async (req, res) => LocationController.getStatesByCountrieID(MongoClient, req, res))
   app.get('/getCitiesByEtateID/:id', async (req, res) => LocationController.getCitiesByEtateID(MongoClient, req, res))
   app.get('/getFullLocationByIDs/:idCountri/:idState/:idCity', async (req, res) => LocationController.getFullLocationByIDs(MongoClient, req, res))
-  // app.get('/inizialiteJourneyById', async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
+  app.get('/inizialiteJourneyById', async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
 
   app.get('/ping', async function (req, res) {
     // Implement Auto clean Tokens 

@@ -45,7 +45,7 @@ class JourneysController {
             let journeys_collection = MongoClient.collection(DBNames.journey);
             let journey = await journeys_collection.findOne({ _id: ObjectID(req.body.journey_id) });
             // console.log(req.body.journey_id)
-            if (journey.journey == Journeys.unestarted) {
+            if (journey.status == Journeys.unestarted) {
                 console.log('3')
                 let phases_colelction = MongoClient.collection(DBNames.phases);
                 let phase = await phases_colelction.findOne({ _id: ObjectID(journey.current_phase), sortin: sortin });
