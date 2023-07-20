@@ -43,7 +43,7 @@ class JourneysController {
         try {
             console.log('1')
             let journeys_collection = MongoClient.collection(DBNames.journey);
-            let journey = await journeys_collection.findOne({ _id: ObjectID(req.body.journey_id) });
+            let journey = await journeys_collection.findOne({ _id: ObjectID(req.params.journey_id) });
             // console.log(req.body.journey_id)
             if (journey.status == Journeys.unestarted) {
                 console.log('3')
