@@ -5,6 +5,7 @@ import http from 'axios';
 import { ObjectID } from 'mongodb';
 import util from 'util';
 import { MtInstans } from '../models/MtInstans.js';
+import { AccountsType } from '../models/AccountsType.js';
 import JourneysController from "./JourneysController.js";
 import moment from "moment";
 import { Journeys } from "../models/JourneysStatus.js";
@@ -13,13 +14,21 @@ class MtAcountsController {
 
     static async getMyAcountByUserID(MongoClient, req, res, APIRestFull = true, session = null) {
 
-        if (session == null) {
-            session = await SessionsController.getCurrentSession(MongoClient, req)
-        }
+        // if (session == null) {
+        //     session = await SessionsController.getCurrentSession(MongoClient, req)
+        // }
+
 
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-        let Acounts = await MtAcountsCollection.find({ user_id: session.user_id.toString() }).toArray()
+        let Acounts = await MtAcountsCollection.find({ user_id: session.user_id.toString(), "origin": AccountsType.withoutJourney }).toArray()
 
+        let journeys_collection = MongoClient.collection(DBNames.journey);
+        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
+
+        for (const joruney of journeys) {
+            let AcountswhithJourney = await MtAcountsCollection.findOne({ _id: ObjectID(joruney.current_account) })
+            Acounts.push(AcountswhithJourney);
+        }
 
         let finalData = {
 
@@ -33,6 +42,44 @@ class MtAcountsController {
         } else {
             return finalData
         }
+    }
+
+    static async getMyAcountByUserID(MongoClient, APIRestFull = true, session = null) {
+
+        // if (session == null) {
+        //     session = await SessionsController.getCurrentSession(MongoClient, req)
+        // }
+
+
+        let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+        let Acounts = await MtAcountsCollection.find({ user_id: "3", "origin": AccountsType.withoutJourney }).toArray()
+        console.log(Acounts)
+
+        let journeys_collection = MongoClient.collection(DBNames.journey);
+        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
+        console.log(journeys)
+
+        for (const joruney of journeys) {
+            let AcountswhithJourney = await MtAcountsCollection.findOne({ _id: ObjectID(joruney.current_account) })
+            console.log(AcountswhithJourney)
+            Acounts.push(AcountswhithJourney);
+
+        }
+
+        console.log(Acounts)
+
+        // let finalData = {
+
+        //     success: true,
+        //     message: "OK",
+        //     data: Acounts
+        // }
+
+        // if (APIRestFull) {
+        //     return res.send(finalData)
+        // } else {
+        //     return finalData
+        // }
     }
 
     static async createAccountsDemoOfChallenger(MongoClient, req, res) {
@@ -80,6 +127,7 @@ class MtAcountsController {
                 broker: broker,
                 servidor: servidor,
                 login: cuenta.login.toString(),
+                origin: AccountsType.withJourney,
                 password: cuenta.password,
                 type: MtInstans.mt5
             };
@@ -90,7 +138,7 @@ class MtAcountsController {
 
 
         for (const current_Account_Demo of current_Account_Demos) {
-            await JourneysController.inizialiteByAccount(MongoClient, req, current_Account_Demo);
+            await JourneysController.createByAccount(MongoClient, req, current_Account_Demo);
         }
 
         return res.send({

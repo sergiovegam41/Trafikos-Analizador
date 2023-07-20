@@ -14,16 +14,11 @@ import { Journeys } from "../models/JourneysStatus.js";
 class JourneysController {
     // static journeys_collection = MongoClient.collection(DBNames.MtAcounts);
 
-    static async inizialiteByAccount(MongoClient, req, current_Account_Demo, sortin = "0") {
+    static async createByAccount(MongoClient, req, current_Account_Demo) {
 
         const { challenger_id, inscription_id } = req.body;
 
-        let phases_colelction = MongoClient.collection(DBNames.phases);
-        let phase = await phases_colelction.findOne({ challenge_id: challenger_id, sortin: sortin });
-        // console.log(challenger_id);
-        const diasASumarMin = parseInt(phase.duration_min);
-        const diasASumarMax = parseInt(phase.duration_max);
-        let fechaActual = moment();
+
 
         let journeys_collection = MongoClient.collection(DBNames.journey);
         const newJourney = {
@@ -33,8 +28,8 @@ class JourneysController {
             current_account: current_Account_Demo.insertedId.toString(),
             challenger_id: challenger_id,
             inscription_id: inscription_id,
-            date_finish_max: fechaActual.clone().add(diasASumarMax, 'days'),
-            date_finish_min: fechaActual.clone().add(diasASumarMin, 'days')
+            // date_finish_max: fechaActual.clone().add(diasASumarMax, 'days'),
+            // date_finish_min: fechaActual.clone().add(diasASumarMin, 'days')
         };
 
         const journey_insert = await journeys_collection.insertOne(newJourney);
@@ -42,7 +37,61 @@ class JourneysController {
         return journey_insert;
     }
 
+    static async inizialiteById(MongoClient, req, res, sortin = "0") {
+
+        try {
+            console.log('1')
+            let journeys_collection = MongoClient.collection(DBNames.journey);
+            let journey = await journeys_collection.findOne({ _id: ObjectID(req.body.journey_id) });
+            // console.log(req.body.journey_id)
+            if (journey.journey == Journeys.unestarted) {
+                console.log('3')
+                let phases_colelction = MongoClient.collection(DBNames.phases);
+                let phase = await phases_colelction.findOne({ _id: ObjectID(journey.current_phase), sortin: sortin });
+                // console.log(challenger_id);
+                const diasASumarMin = parseInt(phase.duration_min);
+                const diasASumarMax = parseInt(phase.duration_max);
+                let fechaActual = moment();
+
+                console.log({
+                    date_finish_max: fechaActual.clone().add((diasASumarMax), 'days'),
+                    date_finish_min: fechaActual.clone().add((diasASumarMin), 'days')
+                })
+
+                await journeys_collection.updateOne({ _id: journey._id }, {
+                    $set: {
+                        status: Journeys.pendiente,
+                        date_finish_max: fechaActual.clone().add((diasASumarMax), 'days'),
+                        date_finish_min: fechaActual.clone().add((diasASumarMin), 'days')
+                    }
+                });
+                return res.send({
+                    success: true,
+                    message: "OK",
+                    data: { "message": "Viaje Inicializado." }
+                })
+            } else {
+                console.log('4')
+                return res.send({
+                    success: true,
+                    message: "FAIL",
+                    data: { "message": "El viaje ya estaba inicializado" }
+                })
+            }
+        } catch (error) {
+            return res.send({
+                success: false,
+                message: "FAIL",
+                data: { "message": "error al inicializar viaje." }
+            })
+        }
+
+    }
+
+
+
     static async validateWinAllJourneys(MongoClient, SQLClient) {
+
 
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
@@ -61,7 +110,7 @@ class JourneysController {
 
             if (isValidDate) {
 
-               console.log('[EN_RANGO_DE_FECHAS]')
+                console.log('[EN_RANGO_DE_FECHAS]')
 
 
                 let phases_colelction = MongoClient.collection(DBNames.phases);
@@ -92,28 +141,28 @@ class JourneysController {
 
 
                     let NextPhase = await phases_colelction.findOne({ challenge_id: element.challenger_id, sortin: (parseInt(phase.sortin) + 1).toString() });
-                    
+
                     // se valida cual es la siguiente phase
                     if (NextPhase) {
 
                         console.log('[EXISTE_SIGUIENTE_FASE]')
 
 
-                        if(!NextPhase.is_production){
+                        if (!NextPhase.is_production) {
 
                             console.log('[FASE_DEMO]')
 
 
                             let CopyUserCollection = MongoClient.collection(DBNames.MtAcounts);
                             let user_copy = await CopyUserCollection.findOne({ user_mysql_id: (account_by_journey.user_id) });
-    
-                            if(user_copy){
-                                
 
-                                try{
+                            if (user_copy) {
+
+
+                                try {
                                     const [host, port] = (await http.get(`${instans.mt5_host_url}/Search?company=${account_by_journey.broker}`)).data.find(company => company.company === account_by_journey.broker).results.find(result => result.name === account_by_journey.servidor).access[0].split(':');
-                                    console.log(host,port)
-    
+                                    console.log(host, port)
+
                                     let apiCreateDemo = `${instans.mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${user_copy.user}&AccType=demo&Country=${user_copy.country}&City=${user_copy.city}&State=${user_copy.state}&ZipCode==${user_copy.zip}&Address=${user_copy.address}&Phone=${user_copy.phone}&Email=${user_copy.email}&CompanyName=trafikos&Deposit=100000`;
                                     const resp = await http.get(apiCreateDemo);
                                     cuenta = resp.data;
@@ -127,16 +176,16 @@ class JourneysController {
                                         password: cuenta.password,
                                         type: MtInstans.mt5
                                     };
-                        
+
 
                                     const current_Account_Demo = await MtAcountsCollection.insertOne(newAccount);
-        
+
                                     console.log('[CUENTA_CREADA]')
 
                                     const diasASumarMin = parseInt(NextPhase.duration_min);
                                     const diasASumarMax = parseInt(NextPhase.duration_max);
                                     let fechaActual = moment();
-        
+
                                     const newJourney = {
                                         current_phase: NextPhase._id.toString(),
                                         status: Journeys.unestarted,
@@ -144,36 +193,35 @@ class JourneysController {
                                         current_account: current_Account_Demo.insertedId.toString(),
                                         challenger_id: element.challenger_id,
                                         inscription_id: element.inscription_id,
-                                        date_finish_max: fechaActual.clone().add(diasASumarMax, 'days'),
-                                        date_finish_min: fechaActual.clone().add(diasASumarMin, 'days')
+                                        // date_finish_max: fechaActual.clone().add(diasASumarMax, 'days'),
+                                        // date_finish_min: fechaActual.clone().add(diasASumarMin, 'days')
                                     };
-        
+
                                     const journey_insert = await journeys_collection.insertOne(newJourney);
 
                                     console.log('[JOURNEY_READY_unestarted]')
 
-                                    
-                                }catch(error){
+
+                                } catch (error) {
 
                                     console.log('[ERROR]')
                                     console.log('~ al crear la cuenta y journie')
 
 
                                 }
-    
+
                                 //TODO: MANDAR CORREO DE QUE GANO LA FASE ANTERIOR, Y YA ESTA LISTO PARA INICAR LA SIGUIENTE FASE
 
-    
-                               
-    
-                            }else{
+
+
+
+                            } else {
                                 console.log('[ERROR]')
                                 console.log('~no tiene user copy')
 
                             }
 
-                        }else{
-
+                        } else {
                             // TODO: GESTION PARA JOURNEY EN FASE DE PRODUCCION
                             // crear los journey sin cuentas en estado unestarted y sin fechas
                             // admin, valida y vincula las cuentas de forma manual por cada JOURNEY que tenga una fase de produccion
@@ -181,10 +229,11 @@ class JourneysController {
 
 
 
+
                         }
 
 
-                        
+
                     } else {
                         // TO DO IMPLEMENTAR PASO a LA ULTIMA FASE
                         // TODO CORREGIDO: IMPLEMENTAR FINAL DEL CHALLENGER
@@ -193,12 +242,12 @@ class JourneysController {
 
                     }
                 }
-            }else{
+            } else {
 
                 console.log('[NO_ESTA_EN_RANGO]')
 
             }
-            
+
         }
     }
 
