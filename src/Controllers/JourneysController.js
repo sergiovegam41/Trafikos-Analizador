@@ -39,20 +39,24 @@ class JourneysController {
     }
 
     static async inizialiteById(MongoClient, req, res, sortin = "0") {
-
+        console.log(req.query.journey_id)
         try {
             console.log('1')
             let journeys_collection = MongoClient.collection(DBNames.journey);
-            let journey = await journeys_collection.findOne({ _id: ObjectID(req.params.journey_id) });
-            // console.log(req.body.journey_id)
+            let journey = await journeys_collection.findOne({ _id: ObjectID(req.query.journey_id) });
+            console.log(journey)
             if (journey.status == Journeys.unestarted) {
                 console.log('3')
                 let phases_colelction = MongoClient.collection(DBNames.phases);
-                let phase = await phases_colelction.findOne({ _id: ObjectID(journey.current_phase), sortin: sortin });
+                console.log('3')
+                let phase = await phases_colelction.findOne({ _id: ObjectID(journey.current_phase)});
+                console.log(phase)
                 // console.log(challenger_id);
                 const diasASumarMin = parseInt(phase.duration_min);
                 const diasASumarMax = parseInt(phase.duration_max);
                 let fechaActual = moment();
+
+                console.log('3')
 
                 console.log({
                     date_finish_max: fechaActual.clone().add((diasASumarMax), 'days'),
