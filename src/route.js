@@ -15,7 +15,7 @@ export default (app, MongoClient, SQLClient) => {
   // 60000 ms = 1 minuto
 
   // JourneysController.validateFailAllJourneys(MongoClient,SQLClient);
-  MtAcountsController.getMyAcountByUserID(MongoClient)
+  // MtAcountsController.getMyAcountByUserID(MongoClient)
 
 
   app.get('/getCodeCountries', async (req, res) => LocationController.getCodeCountries(MongoClient, req, res))
