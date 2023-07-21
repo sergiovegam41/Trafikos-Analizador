@@ -2,16 +2,27 @@ import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
-import JobOneMinController from './Controllers/JobOneMinController.js';
+// import JobOneMinController from './Controllers/JobOneMinController.js';
+import cron from 'node-cron';
 
 export default (app, MongoClient, SQLClient) => {
 
 
-  // setInterval(() => {
-  //   // console.log("Ejecutando cada 1 minuto");
-  //   // JobOneMinController.run(MongoClient, SQLClient)
+  // Tarea a ejecutar a las 00:00 UTC
+  async function cronJob00UTC() {
+    console.log('Ejecutando a las 00:00 UTC.');
+    await JourneysController.validateFailAllJourneys();
+    await JourneysController.validateWinAllJourneys();
+  }
 
-  // }, 60000);
+
+  cron.schedule('0 0 * * *', cronJob00UTC);
+
+  setInterval(() => {
+    console.log("Ejecutando cada 1 minuto");
+    JobOneMinController.run(MongoClient, SQLClient)
+
+  }, 60000);
   // 60000 ms = 1 minuto
 
   // JourneysController.validateFailAllJourneys(MongoClient,SQLClient);

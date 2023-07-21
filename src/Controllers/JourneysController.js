@@ -9,7 +9,7 @@ import MtInstansController from "./MtInstansController.js";
 import MtAcountsController from "./MtAcountsController.js";
 import { MtInstans } from '../models/MtInstans.js';
 
-import EmailsController from './Controllers/EmailsController.js';
+import EmailsController from './EmailsController.js';
 
 import { Journeys } from "../models/JourneysStatus.js";
 
