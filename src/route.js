@@ -2,7 +2,7 @@ import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
-import JobOneMinController from './Controllers/JobOneMinController.js'
+import JobOneMinController from './Controllers/JobOneMinController.js';
 
 export default (app, MongoClient, SQLClient) => {
 
@@ -15,8 +15,6 @@ export default (app, MongoClient, SQLClient) => {
   // 60000 ms = 1 minuto
 
   // JourneysController.validateFailAllJourneys(MongoClient,SQLClient);
-  // MtAcountsController.getMyAcountByUserID(MongoClient)
-
 
   app.get('/getCodeCountries', async (req, res) => LocationController.getCodeCountries(MongoClient, req, res))
   app.get('/getCountries', async (req, res) => LocationController.getCountries(MongoClient, req, res))

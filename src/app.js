@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 import  cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export const __dirname = path.dirname(__filename);
 const app = express()
 
 app.use(bodyParser.urlencoded({ extended: false }));

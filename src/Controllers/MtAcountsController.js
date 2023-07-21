@@ -8,9 +8,16 @@ import { MtInstans } from '../models/MtInstans.js';
 import { AccountsType } from '../models/AccountsType.js';
 import JourneysController from "./JourneysController.js";
 import moment from "moment";
+
+
 import { Journeys } from "../models/JourneysStatus.js";
 import { Console } from "console";
 class MtAcountsController {
+    static async sendemail() {
+
+    
+
+    }
 
     static async getMyAcountByUserID(MongoClient, req, res, APIRestFull = true, session = null) {
 
@@ -111,6 +118,27 @@ class MtAcountsController {
             message: "OK",
             data: { "message": "Suscripcion Aceptada Exitosamente!!!" }
         })
+
+    }
+
+    static async createAccountDemo(MongoClient, data) {
+        let condition = true
+        while (condition) {
+            const instans = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
+
+            const [host, port] = (await http.get(`${instans.mt5_host_url}/Search?company=${data.server.broker}`)).data.find(company => company.company === data.server.broker).results.find(result => result.name === data.server.server).access[0].split(':');
+            let server = { host, port };
+
+            try {
+                let apiCreateDemo = `${instans.mt5_host_url}/GetDemo?host=${server.host}&port=${server.port}&UserName=${data.user_copy.user}&AccType=demo&Country=${data.user_copy.country}&City=${data.user_copy.city}&State=${data.user_copy.state}&ZipCode==${data.user_copy.zip}&Address=${data.user_copy.address}&Phone=${data.user_copy.phone}&Email=${data.user_copy.email}&CompanyName=trafikos&Deposit=100000`;
+                const resp = await http.get(apiCreateDemo);
+                cuenta = resp.data;
+                condition = false;
+                return cuenta
+            } catch (error) {
+            }
+
+        }
 
     }
 
