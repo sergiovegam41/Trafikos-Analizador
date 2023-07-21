@@ -9,7 +9,7 @@ class EmailsController {
 
         const html = readFileSync(__dirname + '\\plantillas_email\\nextJoutney.html', "utf8");
       
-        const compiled = html.replace(" {{name}}", data.name).replace(" {{acount_login}}", data.acount_login).replace(" {{challenger_name}}", data.challenger_name).replace(" {{fase_name}}", data.fase_name);
+        const compiled = html.replace("{{name}}", data.name).replace("{{acount_login}}", data.acount_login).replace("{{challenger_name}}", data.challenger_name).replace("{{fase_name}}", data.fase_name);
 
 
         const content = {

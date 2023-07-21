@@ -2,7 +2,7 @@ import SessionsController from './Controllers/SessionsController.js';
 import SoketAnalizador from './Controllers/SoketsControllers/SoketAnalyze.js';
 import { Privileges } from '../src/models/Privileges.js';
 
-export default (io, MongoClient,SQLClient)=>{
+export default (io, MongoClient, SQLClient)=>{
 
 
   io.on('connection', async (socket)=>{
@@ -20,12 +20,6 @@ export default (io, MongoClient,SQLClient)=>{
       }
 
     })
-
-    // socket.on('disconnect', () => {
-    //   console.log('Client disconnected');
-    //   // Realizar acciones adicionales si es necesario
-
-    // });
 
   })
 

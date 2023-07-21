@@ -2,11 +2,10 @@ import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
-// import JobOneMinController from './Controllers/JobOneMinController.js';
+
 import cron from 'node-cron';
 
 export default (app, MongoClient, SQLClient) => {
-
 
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
@@ -14,7 +13,6 @@ export default (app, MongoClient, SQLClient) => {
     await JourneysController.validateFailAllJourneys();
     await JourneysController.validateWinAllJourneys();
   }
-
 
   cron.schedule('0 0 * * *', cronJob00UTC);
 
