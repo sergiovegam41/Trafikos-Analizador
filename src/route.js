@@ -10,7 +10,7 @@ export default (app, MongoClient, SQLClient) => {
 
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
-    console.log('Ejecutando a las 00:00 UTC.');
+    console.log('Ejecutando tarea a las 00:00 UTC.');
     await JourneysController.validateFailAllJourneys();
     await JourneysController.validateWinAllJourneys();
   }
@@ -18,14 +18,12 @@ export default (app, MongoClient, SQLClient) => {
 
   cron.schedule('0 0 * * *', cronJob00UTC);
 
-  setInterval(() => {
+  setInterval( async () => {
     console.log("Ejecutando cada 1 minuto");
-    JobOneMinController.run(MongoClient, SQLClient)
+    await JobOneMinController.run(MongoClient, SQLClient)
 
   }, 60000);
   // 60000 ms = 1 minuto
-
-  // JourneysController.validateFailAllJourneys(MongoClient,SQLClient);
 
   app.get('/getCodeCountries', async (req, res) => LocationController.getCodeCountries(MongoClient, req, res))
   app.get('/getCountries', async (req, res) => LocationController.getCountries(MongoClient, req, res))
