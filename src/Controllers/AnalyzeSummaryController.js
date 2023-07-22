@@ -12,8 +12,8 @@ class AnalyzeSummaryController {
         console.log("AnalyzeSummaryController@run");
 
         let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-        let Acounts = await AcountsCollection.find({ connectionID: { $ne: null, $ne: "" } }).toArray();
-
+        // let Acounts = await AcountsCollection.find({ connectionID: { $ne: null, $ne: "" } }).toArray();
+        let Acounts = await AcountsCollection.find({ connectionID: { $exists: true, $ne: "" } }).toArray();
         for (const element of Acounts) {
         
             let resp
