@@ -2,6 +2,7 @@ import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
+import JobOneMinController from './Controllers/JobOneMinController.js';
 
 import cron from 'node-cron';
 

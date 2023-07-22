@@ -3,7 +3,7 @@ import AnalyzeSummaryController from './AnalyzeSummaryController.js'
 
 class JobOneMinController {
 
-    static run(MongoClient, SQLClient) {
+     static async run(MongoClient, SQLClient) {
 
         AnalyzeSummaryController.run(MongoClient, SQLClient)
 
