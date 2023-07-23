@@ -76,7 +76,7 @@ class MtAcountsController {
 
             let cuenta = null;
             try {
-                let apiCreateDemo = `${mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${usuario.user}&AccType=demo&Country=${usuario.country}&City=${usuario.city}&State=${usuario.state}&ZipCode==${usuario.zip}&Address=${usuario.address}&Phone=${usuario.phone}&Email=${usuario.email}&CompanyName=trafikos&Deposit=100000`;
+                let apiCreateDemo = `${mt5_host_url}/GetDemo?host=${host}&port=${port}&UserName=${usuario.user}&AccType=demo&Country=${usuario.country}&City=${usuario.city}&State=${usuario.state}&ZipCode==${usuario.zip}&Address=${usuario.address}&Phone=${usuario.phone}&Email=${usuario.email}&CompanyName=trafikos&Deposit=10000`;
 
                 const resp = await http.get(apiCreateDemo);
                 cuenta = resp.data;
