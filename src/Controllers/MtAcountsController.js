@@ -15,7 +15,7 @@ import { Console } from "console";
 class MtAcountsController {
     static async sendemail() {
 
-    
+
 
     }
 
@@ -37,7 +37,7 @@ class MtAcountsController {
             Acounts.push(AcountswhithJourney);
         }
 
-        console.log(Acounts)
+        // console.log(Acounts)
 
         let finalData = {
 
@@ -170,16 +170,26 @@ class MtAcountsController {
 
 
                 let historyOrders = await this.getHistoryOrdersByInstans(instans);
-
-                const profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
-
+                // console.log(historyOrders)
+                // let profitOfSmallestTrade = 0;
+                let  profitOfSmallestTrade2 = 0;
+               let profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
                     if (currentTrade.profit < prevTrade.profit) {
                         return currentTrade;
                     } else {
                         return prevTrade;
                     }
+                });
 
-                }).profit;
+                console.log(profitOfSmallestTrade)
+
+                if (profitOfSmallestTrade.dealType != 'Balance') {
+                    profitOfSmallestTrade2 = profitOfSmallestTrade.profit
+                } else {
+                    profitOfSmallestTrade2 = 0;
+                }
+
+                console.log(profitOfSmallestTrade2)
 
                 let finalData = {
 
@@ -189,7 +199,7 @@ class MtAcountsController {
 
                         accountSummary: resp.data,
                         historyOrders: await this.getHistoryOrdersByInstans(instans),
-                        drawnMax: profitOfSmallestTrade,
+                        drawnMax: profitOfSmallestTrade2,
                         openedOrders: await this.getHistoryOpenedOrdersByInstans(instans),
                         TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id, SQLClient),
                         flotanteMax: await this.getFlotanteMax(acount_id, SQLClient)

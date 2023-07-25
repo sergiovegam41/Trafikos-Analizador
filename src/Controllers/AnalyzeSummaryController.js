@@ -7,8 +7,6 @@ class AnalyzeSummaryController {
 
     static async run(MongoClient, SQLClient) {
 
-
-
         console.log("AnalyzeSummaryController@run");
 
         let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
