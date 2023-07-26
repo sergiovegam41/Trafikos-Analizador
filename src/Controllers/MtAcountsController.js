@@ -177,7 +177,7 @@ class MtAcountsController {
                     }
                 });
 
-                console.log(profitOfSmallestTrade)
+                // console.log(profitOfSmallestTrade)
 
                 if (profitOfSmallestTrade.dealType != 'Balance') {
                     profitOfSmallestTrade2 = profitOfSmallestTrade.profit
@@ -185,7 +185,7 @@ class MtAcountsController {
                     profitOfSmallestTrade2 = 0;
                 }
 
-                console.log(profitOfSmallestTrade2)
+                // console.log(profitOfSmallestTrade2)
 
                 let finalData = {
 

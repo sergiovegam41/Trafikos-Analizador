@@ -12,8 +12,9 @@ export default (app, MongoClient, SQLClient) => {
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
     console.log('Ejecutando tarea a las 00:00 UTC.');
-    await JourneysController.validateFailAllJourneys();
-    await JourneysController.validateWinAllJourneys();
+    await JourneysController.validateFailAllJourneys(MongoClient,SQLClient);
+    await JourneysController.validateWinAllJourneys(MongoClient,SQLClient);
+    console.log('fin ')
   }
 
   cron.schedule('0 0 * * *', cronJob00UTC);

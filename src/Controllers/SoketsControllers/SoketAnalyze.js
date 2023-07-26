@@ -13,6 +13,10 @@ class SoketAnalizador{
         let session = await SessionsController.getCurrentSession(MongoClient, {headers:{authorization: data.token}})
         let MTAcounts = await MtAcountsController.getMyAcountByUserID(MongoClient,{headers:{authorization: data.token}}, null, false, session)
         let CurrentAcount = MTAcounts.data[0]
+
+        if(!CurrentAcount){
+            return;
+        }
         let CurrentInstans = await MtInstansController.getInstansByAcountID(MongoClient, CurrentAcount._id)
 
         clientSocket.on("client:"+this.analize+":change_account",async (data)=>{
@@ -65,7 +69,7 @@ class SoketAnalizador{
             instans
         )
 
-        console.log(resp)
+            // console.log(resp)
 
 
 
