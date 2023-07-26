@@ -165,15 +165,11 @@ class MtAcountsController {
             }
 
             try {
-                // console.log("resp: ")
+
                 const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
-
-
                 let historyOrders = await this.getHistoryOrdersByInstans(instans);
-                // console.log(historyOrders)
-                // let profitOfSmallestTrade = 0;
                 let  profitOfSmallestTrade2 = 0;
-               let profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
+                let profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
                     if (currentTrade.profit < prevTrade.profit) {
                         return currentTrade;
                     } else {
