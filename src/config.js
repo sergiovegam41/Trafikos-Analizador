@@ -10,4 +10,5 @@ export const URI_MSQL = process.env.URI_MSQL
 
 export const MAIL_USERNAME = process.env.MAIL_USERNAME
 export const MAIL_PASSWORD = process.env.MAIL_PASSWORD
+export const APP_LARAVEL_URL = process.env.APP_LARAVEL_URL
 

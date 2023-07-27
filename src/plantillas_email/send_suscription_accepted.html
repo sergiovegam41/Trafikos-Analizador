@@ -1,33 +1,34 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>Su nueva cuenta</title>
-  
+
   <!-- Estilos CSS -->
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #f2f2f2;
     }
-    
+
     .container {
       max-width: 500px;
       margin: 0 auto;
       padding: 20px;
       background-color: #fff;
       border-radius: 5px;
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);  
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
     }
-    
+
     h1 {
       text-align: center;
       color: #1e50ee;
     }
-    
+
     p {
       line-height: 1.6;
     }
-    
+
     .credentials {
       background-color: #1e50ee;
       color: #fff;
@@ -36,36 +37,38 @@
       text-align: center;
       animation: slide-down 0.5s ease;
     }
-    
+
     @keyframes slide-down {
       from {
         transform: translateY(-20px);
         opacity: 0;
       }
+
       to {
-        transform:translateY(0);
+        transform: translateY(0);
         opacity: 1;
       }
     }
-    
   </style>
 </head>
 
 <body>
 
   <div class="container">
-  
+
     <h1>Bienvenido!, ahora eres parte de MasterFunds.</h1>
-  
+
     <p>Gracias por suscribirte 😁. Aquí están las credenciales de tu nueva cuenta 👇:</p>
-    
+
     <div class="credentials">
-      <p>Usuario: {{account_login}}</p>
-      <p>Contraseña: {{account_password}}</p>
+      <p>Usuario: {{account_login}} </p>
+      <p>Contraseña: {{account_password}} </p>
     </div>
-  
-    <p><a href="https://login.trafikos.com/admin">Inicia sesión</a> con tus credenciales para empezar el reto. Te deseamos un buen viaje.</p>    
+
+    <p><a target="_blank" href="https://login.trafikos.com/admin">Inicia sesión</a> con Las credenciales de tu USUARIO
+      para empezar el reto. Te deseamos un buen viaje.</p>
   </div>
 
 </body>
+
 </html>

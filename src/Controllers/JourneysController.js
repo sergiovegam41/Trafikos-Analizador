@@ -73,17 +73,27 @@ class JourneysController {
                         started_date: moment()
                     }
                 });
+
+                let cuentas_collection = MongoClient.collection(DBNames.MtAcounts);
+                let cuenta = await cuentas_collection.findOne({ _id: ObjectID(journey.current_account) });
+
+                let users_copy_collection = MongoClient.collection(DBNames.user_copy);
+                let user_copy = await users_copy_collection.findOne({ user_mysql_id: cuenta.user_id });
+
+
+                EmailsController.sendMailInitJourney(cuenta, user_copy.email);
+
                 return res.send({
                     success: true,
                     message: "OK",
-                    data: { "message": "Cuenta Inicializada! :)." }
+                    data: { "title": "Cuenta Inicializada!", "message": 'Las credenciales se han enviado por correo electronico. Tambien estaran presentes en el menu Suscripciones del sistema.' }
                 })
             } else {
                 console.log('4')
                 return res.send({
                     success: true,
                     message: "FAIL",
-                    data: { "message": "La Cuenta ya estaba inicializado" }
+                    data: { "title": "La Cuenta ya estaba inicializado", "message": 'Error al inicializar' }
                 })
             }
         } catch (error) {
@@ -341,7 +351,7 @@ class JourneysController {
 
         return { validation: true, message: 'bien', parameter: 'ninguno' };
 
-        
+
     }
 
     static async getConditionsJourneyByPhase(MongoClient, journey) {

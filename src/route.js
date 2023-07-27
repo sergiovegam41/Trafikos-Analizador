@@ -5,6 +5,7 @@ import JourneysController from './Controllers/JourneysController.js';
 import JobOneMinController from './Controllers/JobOneMinController.js';
 
 import cron from 'node-cron';
+import EmailsController from './Controllers/EmailsController.js';
 
 export default (app, MongoClient, SQLClient) => {
 
@@ -17,7 +18,7 @@ export default (app, MongoClient, SQLClient) => {
 
   cron.schedule('0 0 * * *', cronJob00UTC);
 
-  setInterval( async () => {
+  setInterval(async () => {
     console.log("Ejecutando cada 1 minuto");
     await JobOneMinController.run(MongoClient, SQLClient)
 
@@ -36,6 +37,7 @@ export default (app, MongoClient, SQLClient) => {
     return res.send(true)
   })
   // app.get('/api/inizialiteJourneyById',validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
+  app.get('/api/sendMailAccountConfirmation',  async (req, res) => EmailsController.sendMailAccountConfirmation(MongoClient, req, res))
 
   app.get('/api/getMyAcounts', validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient, req, res))
   app.get('/api/inizialiteJourneyById', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))

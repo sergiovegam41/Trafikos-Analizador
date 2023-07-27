@@ -16,6 +16,7 @@ export class DBNames {
     static parametros = "parametros";
     static traceability_challenger = "traceability_challenger";
     static user_copy = "user_copy";
+    static users_draft = "users_draft";
 } 
 
 export const connectDB = async ( onConnect )=>{
