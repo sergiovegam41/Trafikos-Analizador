@@ -19,7 +19,7 @@ export class DBNames {
     static users_draft = "users_draft";
 } 
 
-export const connectDB = async ( onConnect )=>{
+export const connectDB = async ( onConnect ) => {
 
 
     try {

@@ -123,21 +123,44 @@ class MtAcountsController {
 
     static async createAccountDemo(MongoClient, data) {
         let condition = true
+        let instans = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
+        let i = 0;
         while (condition) {
-            const instans = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
+            if (i > 0) {
+                instans = await MtInstansController.takeMtInstans(MongoClient, MtInstans.mt5);
+            }
+            i++;
+            // console.log(instans)
+            console.log('instancia bien', instans)
+            const [host, port] = (await http.get(`${instans}/Search?company=${data.server.broker}`)).data.find(company => company.company === data.server.broker).results.find(result => result.name === data.server.server).access[0].split(':');
+            // const { access } = (await http.get(`${mt5_host_url}/Search?company=${broker}`)).data
+            //     .find(company => company.company === broker)
+            //     .results.find(result => result.name === servidor);
 
-            const [host, port] = (await http.get(`${instans.mt5_host_url}/Search?company=${data.server.broker}`)).data.find(company => company.company === data.server.broker).results.find(result => result.name === data.server.server).access[0].split(':');
+            // const [host, port] = access[0].split(':');
+
             let server = { host, port };
-
+            console.log('instancia bien 2 ', server)
             try {
-                let apiCreateDemo = `${instans.mt5_host_url}/GetDemo?host=${server.host}&port=${server.port}&UserName=${data.user_copy.user}&AccType=demo&Country=${data.user_copy.country}&City=${data.user_copy.city}&State=${data.user_copy.state}&ZipCode==${data.user_copy.zip}&Address=${data.user_copy.address}&Phone=${data.user_copy.phone}&Email=${data.user_copy.email}&CompanyName=trafikos&Deposit=100000`;
-                const resp = await http.get(apiCreateDemo);
-                cuenta = resp.data;
+                console.log(data)
+                // let apiCreateDemo = `${instans}/GetDemo?host=${server.host}&port=${server.port}&UserName=${data.user_copy.usuario}&AccType=demo&Country=${data.user_copy.Country}&City=${data.user_copy.ciudad}&State=${data.user_copy.estado}&ZipCode==${data.user_copy.zip}&Address=${data.user_copy.direccion}&Phone=${data.user_copy.phone}&Email=${data.user_copy.email}&CompanyName=trafikos&Deposit=10000`;
+                // console.log(apiCreateDemo)
+
+
+                let apiCreateDemo2 = `${instans}/GetDemo?host=${server.host}&port=${server.port}&UserName=${data.user_copy.usuario}&AccType=demo&Country=${data.user_copy.Country}&City=${data.user_copy.ciudad}&State=${data.user_copy.estado}&ZipCode=${data.user_copy.zip}&Address=${data.user_copy.direccion}&Phone=${data.user_copy.phone}&Email=${data.user_copy.email}&CompanyName=trafikos&Deposit=10000`;
+                console.log(apiCreateDemo2)
+                const resp = await http.get(apiCreateDemo2);
+                let cuenta = resp.data;
+
+                console.log(resp)
                 condition = false;
                 return cuenta
             } catch (error) {
+                console.log('error')
             }
-
+            if (!condition) {
+                return cuenta;
+            }
         }
 
     }
@@ -168,7 +191,7 @@ class MtAcountsController {
 
                 const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
                 let historyOrders = await this.getHistoryOrdersByInstans(instans);
-                let  profitOfSmallestTrade2 = 0;
+                let profitOfSmallestTrade2 = 0;
                 let profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
                     if (currentTrade.profit < prevTrade.profit) {
                         return currentTrade;
@@ -268,17 +291,22 @@ class MtAcountsController {
 
     static async validateOrdersInProgressAfterUTC(MongoClient, account_id, hour, instans) {
         // obtener hora actual y hora limite en UTC
-        const horaActualUtc = moment.utc().startOf('minute');
-        const horaLimiteUtc = moment.utc(hour, 'HH:mm').startOf('minute');
+        // const horaActualUtc = moment.utc().startOf('minute');
+        // const horaLimiteUtc = moment.utc(hour, 'HH:mm').startOf('minute');
 
-        // retornar false en caso de que todo este ok 
-        if (!horaActualUtc.isSame(horaLimiteUtc)) {
-            return false;
-        }
+        // // retornar false en caso de que todo este ok 
+        // if (!horaActualUtc.isSame(horaLimiteUtc)) {
+        //     return false;
+        // }
+
+        // const now = moment.utc();
+        // if (!now.isSame(moment.utc().startOf('day'))) {
+        //     console.log('NO Son las 00:00 UTC');
+        // }
 
         // obtener las ordenes abiertas de la cuenta actual
         const openedOrders = await this.getHistoryOpenedOrdersByInstans(instans);
-
+        // console.log(openedOrders)
         // retornar validacion de existencia de ordenes abiertas
         return openedOrders.length > 0;
     }

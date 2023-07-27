@@ -1,14 +1,11 @@
 import { DBNames } from './../db.js';
 
-
 class LocationController {
 
   static async getCodeCountries(MongoClient, req, res) {
 
     let codeCountriesCollection = MongoClient.collection(DBNames.codigo_paises);
-
     let codeCountries = await codeCountriesCollection.find({}).sort({ phone_code: 1 }).toArray()
-
 
     let uniqueData = codeCountries.filter((element, index, self) => {
       return index === self.findIndex((e) => (
@@ -17,11 +14,9 @@ class LocationController {
     });
 
     return res.send({
-
       success: true,
       message: "OK",
       data: uniqueData
-
     })
 
   }

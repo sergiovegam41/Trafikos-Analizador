@@ -3,28 +3,34 @@ import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
 import JobOneMinController from './Controllers/JobOneMinController.js';
-
+import moment from "moment";
 import cron from 'node-cron';
 import EmailsController from './Controllers/EmailsController.js';
 
 export default (app, MongoClient, SQLClient) => {
 
+  console.log("Init2")
+
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
     console.log('Ejecutando tarea a las 00:00 UTC.');
-    await JourneysController.validateFailAllJourneys(MongoClient,SQLClient);
-    await JourneysController.validateWinAllJourneys(MongoClient,SQLClient);
+    await JourneysController.validateFailUTCordersOpenAllJourneys(MongoClient, SQLClient);
+    await JourneysController.validateFailAllJourneys(MongoClient, SQLClient);
+    await JourneysController.validateWinAllJourneys(MongoClient, SQLClient);
     console.log('fin ')
   }
 
-  cron.schedule('0 0 * * *', cronJob00UTC);
+  const utcMidnight = moment.utc().startOf('day')
+  const serveMidnight = utcMidnight.local();
+  const formattedTime = serveMidnight.format('HH')
+  cron.schedule(`0 ${formattedTime} * * *`, cronJob00UTC);
 
   setInterval(async () => {
     console.log("Ejecutando cada 1 minuto");
     await JobOneMinController.run(MongoClient, SQLClient)
 
   }, 60000);
-  // 60000 ms = 1 minuto
+
 
   app.get('/getCodeCountries', async (req, res) => LocationController.getCodeCountries(MongoClient, req, res))
   app.get('/getCountries', async (req, res) => LocationController.getCountries(MongoClient, req, res))
@@ -38,7 +44,7 @@ export default (app, MongoClient, SQLClient) => {
     return res.send(true)
   })
   // app.get('/api/inizialiteJourneyById',validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
-  app.get('/api/sendMailAccountConfirmation',  async (req, res) => EmailsController.sendMailAccountConfirmation(MongoClient, req, res))
+  app.get('/api/sendMailAccountConfirmation', async (req, res) => EmailsController.sendMailAccountConfirmation(MongoClient, req, res))
 
   app.get('/api/getMyAcounts', validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient, req, res))
   app.get('/api/inizialiteJourneyById', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))

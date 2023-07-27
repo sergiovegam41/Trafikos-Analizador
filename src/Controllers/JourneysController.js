@@ -46,7 +46,7 @@ class JourneysController {
             console.log('1')
             let journeys_collection = MongoClient.collection(DBNames.journey);
             let journey = await journeys_collection.findOne({ _id: ObjectID(req.query.journey_id) });
-            console.log(journey)
+            // console.log(journey)
             if (journey.status == Journeys.unestarted) {
                 console.log('3')
                 let phases_colelction = MongoClient.collection(DBNames.phases);
@@ -125,12 +125,13 @@ class JourneysController {
             // obtenemos la fecha actual
             const now = moment();
 
-            console.log(dateFinishMin)
-            console.log(now)
+            // console.log(dateFinishMin)
+            // console.log(now)
             // validamos si la fecha de fin es menor a la fecha actual
-            const isValidDate = dateFinishMin.isSameOrAfter(now);
+            // const isValidDate = dateFinishMin.isSameOrAfter(now);
+            const isValidDate = dateFinishMin.isBefore(now);
+            console.log(isValidDate)
 
-         
 
             // Validar solo los journeys que tienen los dias minimos tradeados
             if (isValidDate) {
@@ -138,7 +139,7 @@ class JourneysController {
 
                 // traemos la fase del viaje actual
                 let phases_colelction = MongoClient.collection(DBNames.phases);
-                let phase = await phases_colelction.findOne({ _id: ObjectID(element.phase_id) });
+                let phase = await phases_colelction.findOne({ _id: ObjectID(element.current_phase) });
 
                 // traemos la cuenta del viaje actual
                 let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
@@ -146,18 +147,22 @@ class JourneysController {
 
                 // obtenemos la instancia de la cuenta atual
                 const instans_acc_act = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
-
+                console.log('valGan')
                 // obtenemos los AccountSummary de la cuenta actual para validar el profit
                 const resp = await http.get(`${instans_acc_act.mt5_host_url}/AccountSummary?id=${instans_acc_act.connectionID}`);
 
                 // Se valida si el jurnie cumple con el profit para ganar la fase
-                if (resp.data.accountSummary.profit >= phase.require_profit) {
+                console.log('valGan')
+                console.log(phase)
+                console.log('valGan')
+                console.log(resp.data)
+                if (resp.data.profit >= phase.require_profit) {
                     console.log('[CUMPLE_CON_EL_PROFIT_MINIMO]')
 
                     // ponemos el viaje actual como ganado y le damos una fecha de win
                     await journeys_collection.updateOne({ _id: element._id }, {
                         $set: {
-                            status: Journeys.win,
+                            status: Journeys.pendiente,
                             wined_date: moment(),
 
                         }
@@ -177,11 +182,11 @@ class JourneysController {
                     if (!NextPhase.is_production) {
                         console.log('[FASE_DEMO]')
                         // fase normal
-
+                        console.log(account_by_journey.user_id)
                         // obtenemos la copia del usuario en mongodb
-                        let CopyUserCollection = MongoClient.collection(DBNames.MtAcounts);
+                        let CopyUserCollection = MongoClient.collection(DBNames.user_copy);
                         let user_copy = await CopyUserCollection.findOne({ user_mysql_id: (account_by_journey.user_id) });
-
+                        console.log(user_copy)
                         if (user_copy) {
                             try {
                                 // creamos un objeto con el servidor, el broker actual, y el usuario
@@ -240,7 +245,10 @@ class JourneysController {
 
 
                     }
+                } else {
+                    console.log('no profit')
                 }
+
             } else {
 
                 console.log('[NO_ESTA_EN_RANGO]')
@@ -255,12 +263,12 @@ class JourneysController {
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
 
-        console.log(journeys)
+        // console.log(journeys)
 
 
         for (const element of journeys) {
             let val = await this.validateOne(MongoClient, SQLClient, element);
-            console.log(val)
+            // console.log(val)
             if (!val.validation) {
 
                 let journeys_collection = MongoClient.collection(DBNames.journey);
@@ -276,6 +284,37 @@ class JourneysController {
             } else {
                 console.log('TODO OK');
             }
+        }
+    }
+
+    static async validateFailUTCordersOpenAllJourneys(MongoClient) {
+        console.log('JOURNEYS');
+        let journeys_collection = MongoClient.collection(DBNames.journey);
+        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
+
+        for (const element of journeys) {
+            // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
+            let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+            let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(element.current_account) });
+
+            const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
+            let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
+                account_by_journey._id.toString(),
+                '00:00', instans);
+
+            // validacion negativa
+            console.log(validationUTC);
+            if (validationUTC) {
+                await journeys_collection.updateOne({ _id: element._id }, {
+                    $set: {
+                        status: Journeys.failed,
+                        failed_message: 'Tienes ordenes abiertas a las 00:00UTC',
+                        failed_parameter: 'validacion 00:00UTC',
+                        failed_date: moment()
+                    }
+                });
+            };
+            console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
         }
     }
 
@@ -296,15 +335,7 @@ class JourneysController {
         if (isValidDate) return { validation: false, message: 'El Reto ha concluido sin exito :(', parameter: 'time_exceeded' };
         console.log('[FINAL DEL VIAJE OK]');
 
-        // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
-        let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
-            account_by_journey._id.toString(),
-            '00:00', instans);
 
-        // validacion negativa
-        console.log('[VALIDACION UTC]');
-        if (validationUTC) return { validation: false, message: 'Tienes ordenes abiertas a las 00:00UTC', parameter: 'validacion 00:00UTC' };
-        console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
 
         // obtener condiciones del viaje
         let conditions = await this.getConditionsJourneyByPhase(MongoClient, journey)
@@ -324,7 +355,7 @@ class JourneysController {
                 console.log('[VALIDACION CONDICION1]');
                 let valFailed = await this.isFailed(parametro.name, condition, AccountData)
                 console.log('[VALIDACION CONDICION2]');
-                console.log(valFailed)
+                // console.log(valFailed)
                 if (valFailed.validation === false) {
                     console.log('[PERDIO ' + valFailed.message + ' ' + valFailed.parameter + ']');
                     isFailed = true;
@@ -358,9 +389,9 @@ class JourneysController {
         if (isValidDate) {
             const orders = AccountData.data.historyOrders.orders;
 
-            console.log('VAL ORDERS');
-            console.log(orders);
-            console.log('VAL ORDERS');
+            // console.log('VAL ORDERS');
+            // console.log(orders);
+            // console.log('VAL ORDERS');
 
 
 
@@ -427,13 +458,13 @@ class JourneysController {
             try {
                 ejecucion = (vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`))
             } catch (error) {
-                console.log(error)
+                // console.log(error)
             }
 
 
             return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a  ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return { validation: true, message: `ninguno `, parameter: 'n' }
 
         }

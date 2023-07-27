@@ -6,7 +6,7 @@ import  cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
 export const __dirname = path.dirname(__filename);
-const app = express()
+const app = express() 
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
