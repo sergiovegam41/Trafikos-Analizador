@@ -356,7 +356,7 @@ class JourneysController {
                 let valFailed = await this.isFailed(parametro.name, condition, AccountData)
                 console.log('[VALIDACION CONDICION2]');
                 // console.log(valFailed)
-                if (valFailed.validation === false) {
+                if (valFailed.validation === true) {
                     console.log('[PERDIO ' + valFailed.message + ' ' + valFailed.parameter + ']');
                     isFailed = true;
                     motivoFailed = valFailed.message;
@@ -442,10 +442,10 @@ class JourneysController {
 
                 case 'Flotante':
                     console.log('Flotante')
-                    b = AccountData.data.flotanteMax.flotante ?? 0;
+                    b = AccountData.data.flotanteMax.flotante;
                 case 'DrawnMax':
                     console.log('DrawnMax')
-                    b = AccountData.data.drawnMax ?? 0;
+                    b = AccountData.data.drawnMax;
                 case 'Equidad':
                     console.log('Equidad')
                     b = AccountData.data.accountSummary.equity;
@@ -454,9 +454,9 @@ class JourneysController {
                     b = AccountData.data.accountSummary.profit;
             }
 
-            let ejecucion = true;
+            let ejecucion = false;
             try {
-                ejecucion = (vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`))
+                ejecucion = (vm.runInNewContext(` ${b} ${condition.conditional} ${condition.value}`))
             } catch (error) {
                 // console.log(error)
             }
@@ -465,7 +465,7 @@ class JourneysController {
             return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a  ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
         } catch (error) {
             // console.log(error)
-            return { validation: true, message: `ninguno `, parameter: 'n' }
+            return { validation: false, message: `ninguno `, parameter: 'n' }
 
         }
 
