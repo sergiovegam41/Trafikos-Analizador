@@ -20,9 +20,9 @@ export default (app, MongoClient, SQLClient) => {
     console.log('fin ')
   }
 
-  const utcMidnight = moment.utc().startOf('day')
+  const utcMidnight = moment.utc().startOf('day');
   const serveMidnight = utcMidnight.local();
-  const formattedTime = serveMidnight.format('HH')
+  const formattedTime = serveMidnight.format('HH');
   cron.schedule(`0 ${formattedTime} * * *`, cronJob00UTC);
 
   setInterval(async () => {

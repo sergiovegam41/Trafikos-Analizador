@@ -335,8 +335,6 @@ class JourneysController {
         if (isValidDate) return { validation: false, message: 'El Reto ha concluido sin exito :(', parameter: 'time_exceeded' };
         console.log('[FINAL DEL VIAJE OK]');
 
-
-
         // obtener condiciones del viaje
         let conditions = await this.getConditionsJourneyByPhase(MongoClient, journey)
 
@@ -452,7 +450,10 @@ class JourneysController {
                 case 'Profit':
                     console.log('Profit')
                     b = AccountData.data.accountSummary.profit;
+
             }
+
+            console.log(b)
 
             let ejecucion = false;
             try {
@@ -462,11 +463,9 @@ class JourneysController {
             }
 
 
-            return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a  ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
+            return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
         } catch (error) {
-            // console.log(error)
             return { validation: false, message: `ninguno `, parameter: 'n' }
-
         }
 
     }
