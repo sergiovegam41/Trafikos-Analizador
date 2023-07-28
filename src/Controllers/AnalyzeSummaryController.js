@@ -2,6 +2,8 @@
 import { DBNames } from './../db.js';
 import http from 'axios';
 import { ObjectID } from 'mongodb';
+import MtInstansController from "./MtInstansController.js";
+import { Journeys } from "../models/JourneysStatus.js";
 
 class AnalyzeSummaryController {
 
@@ -10,21 +12,34 @@ class AnalyzeSummaryController {
         console.log("AnalyzeSummaryController@run");
 
         let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-        let Acounts = await AcountsCollection.find({ connectionID: { $exists: true, $ne: null } }).toArray();
+        // let Acounts = await AcountsCollection.find({ connectionID: { $exists: true, $ne: null } }).toArray();
+
+
+        let journeys_collection = MongoClient.collection(DBNames.journey);
+        let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray();
+
+        for (const element of journeys) {
+
+
+            console.log(element._id)
+          let Acount = await AcountsCollection.findOne({ _id: ObjectID(element.current_account) })
         
-        for (const element of Acounts) {
-        
+          if(Acount){
+
+
+            let instans = await MtInstansController.getInstansByAcountID(MongoClient, Acount._id)
+
             let resp
             try {
 
-                resp = await http.get(`${element.mt5_host_url}/AccountSummary?id=${element.connectionID}`);
+                resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
 
             } catch (error) {
 
                 console.log("[Fallo]")
-                await AcountsCollection.updateOne({ _id: ObjectID(element._id) }, { $set: { mt5_host_url: null, connectionID: null } });
+                await AcountsCollection.updateOne({ _id: ObjectID(Acount._id) }, { $set: { mt5_host_url: null, connectionID: null } });
 
-                console.log(Acounts)
+                // console.log(Acount)
 
             }
 
@@ -41,6 +56,12 @@ class AnalyzeSummaryController {
                 );
 
             }
+
+          }else{
+            console.log("no")
+
+          }
+         
         
         }
        
