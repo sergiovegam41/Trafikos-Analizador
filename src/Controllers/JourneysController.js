@@ -247,6 +247,9 @@ class JourneysController {
 
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
+        console.log('JOURNEYS');
+        console.log(journeys)
+
 
         for (const element of journeys) {
             let val = await this.validateOne(MongoClient, SQLClient, element);
@@ -270,7 +273,7 @@ class JourneysController {
     }
 
     static async validateOne(MongoClient, SQLClient, journey) {
-
+        console.log('[VALIDAR FINAL DEL VIAJE]');
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(journey.current_account) });
 
@@ -282,9 +285,9 @@ class JourneysController {
         const now = moment();
         const isValidDate = dateFinishMax.isBefore(now);
 
+        console.log('[VALIDAR FINAL DEL VIAJE]');
         if (isValidDate) return { validation: false, message: 'El Reto ha concluido sin exito :(', parameter: 'time_exceeded' };
-
-        // console.log()
+        console.log('[FINAL DEL VIAJE OK]');
 
         // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
         let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
@@ -292,7 +295,9 @@ class JourneysController {
             '00:00', instans);
 
         // validacion negativa
+        console.log('[VALIDACION UTC]');
         if (validationUTC) return { validation: false, message: 'Tienes ordenes abiertas a las 00:00UTC', parameter: 'validacion 00:00UTC' };
+        console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
 
         // obtener condiciones del viaje
         let conditions = await this.getConditionsJourneyByPhase(MongoClient, journey)
@@ -307,9 +312,11 @@ class JourneysController {
         let parameterFailed = '';
         for (const condition of conditions) {
             if (!isFailed) {
+                console.log('[VALIDACION CONDICION]');
                 let parametro = await parametrosCollection.findOne({ _id: ObjectID(condition.parameter) });
                 let valFailed = await this.isFailed(parametro.name, condition, AccountData)
                 if (valFailed.validation) {
+                    console.log('[PERDIO ' + valFailed.message + ' ' + valFailed.parameter + ']');
                     isFailed = true;
                     motivoFailed = valFailed.message;
                     parameterFailed = valFailed.parameter;
@@ -319,11 +326,16 @@ class JourneysController {
 
         }
 
+        console.log('[VALIDAR CONDICION PERDIDA?]');
         if (isFailed) return { validation: false, message: motivoFailed, parameter: parameterFailed };
+        console.log('[NO PERDIO]');
+
 
         let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData, journey)
 
+        console.log('[VALIDAR TRADEO DIARIO]');
         if (!validateDailyTrade.validation) return { validation: false, message: validateDailyTrade.message, parameter: validateDailyTrade.parameter };
+        console.log('[NO TRADEO AYER]');
 
         return { validation: true, message: 'no ha perdido', parameter: null };
     }
