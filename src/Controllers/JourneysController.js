@@ -288,34 +288,39 @@ class JourneysController {
     }
 
     static async validateFailUTCordersOpenAllJourneys(MongoClient) {
-        console.log('JOURNEYS');
+        console.log('validateFailUTCordersOpenAllJourneys');
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
 
         for (const element of journeys) {
+
             // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
             let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
             let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(element.current_account) });
-
+          
             const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
+          
             let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
                 account_by_journey._id.toString(),
                 '00:00', instans);
-
+          
             // validacion negativa
             console.log(validationUTC);
             if (validationUTC) {
-                await journeys_collection.updateOne({ _id: element._id }, {
-                    $set: {
-                        status: Journeys.failed,
-                        failed_message: 'Tienes ordenes abiertas a las 00:00UTC',
-                        failed_parameter: 'validacion 00:00UTC',
-                        failed_date: moment()
-                    }
-                });
+                console.log('[SI HAY OREDENES ABIERTAS]');
+                // await journeys_collection.updateOne({ _id: element._id }, {
+                //     $set: {
+                //         status: Journeys.failed,
+                //         failed_message: 'Tienes ordenes abiertas a las 00:00UTC',
+                //         failed_parameter: 'validacion 00:00UTC',
+                //         failed_date: moment()
+                //     }
+                // });
             };
             console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
         }
+
+        console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
     }
 
     static async validateOne(MongoClient, SQLClient, journey) {
@@ -325,7 +330,6 @@ class JourneysController {
 
         const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
         // traer la cuenta del viaje actual
-
 
         const dateFinishMax = moment(journey.date_finish_max);
         const now = moment();
@@ -341,6 +345,13 @@ class JourneysController {
         // preparar colleccion de parametros
         let parametrosCollection = MongoClient.collection(DBNames.parametros);
         let AccountData = await this.getData(MongoClient, SQLClient, account_by_journey, instans)
+
+        console.log('[VALIDAR TRADEO DIARIO]');
+        let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData, journey)
+
+        console.log('[VALIDAR TRADEO DIARIO]');
+        if (!validateDailyTrade.validation) return { validation: false, message: validateDailyTrade.message, parameter: validateDailyTrade.parameter };
+        console.log('[NO TRADEO AYER]');
 
         // recorrer condiciones y validar
         let isFailed = false;
@@ -368,25 +379,23 @@ class JourneysController {
         if (isFailed) return { validation: false, message: motivoFailed, parameter: parameterFailed };
         console.log('[NO PERDIO]');
 
-
-        let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData, journey)
-
-        console.log('[VALIDAR TRADEO DIARIO]');
-        if (!validateDailyTrade.validation) return { validation: false, message: validateDailyTrade.message, parameter: validateDailyTrade.parameter };
-        console.log('[NO TRADEO AYER]');
-
         return { validation: true, message: 'no ha perdido', parameter: null };
     }
 
     static async validateDailyTrade(MongoClient, SQLClient, AccountData, journey) {
+        // console.log('p1');
         const dateStarted_date = moment(journey.started_date);
         // obtenemos la fecha actual
+        // console.log('p1');
         const now = moment();
+        // console.log('p1');
         // validamos si la fecha de fin es menor a la fecha actual
         const isValidDate = dateStarted_date.isBefore(now);
+        // console.log('p1');
         if (isValidDate) {
+            // console.log('p1');
             const orders = AccountData.data.historyOrders.orders;
-
+            // console.log('p1');
             // console.log('VAL ORDERS');
             // console.log(orders);
             // console.log('VAL ORDERS');
@@ -395,19 +404,21 @@ class JourneysController {
 
             // Obtener fecha/hora de inicio y fin del día anterior
             const start = moment().utc().subtract(1, 'day').startOf('day').add(1, 'minute');
+            // console.log('p1');
             const end = moment().utc().subtract(1, 'day').endOf('day');
-
+            // console.log('p1');
             // Filtrar órdenes 
             const yesterdayOrders = orders.filter(order => {
-                const orderTime = moment(order.openTime);
+                const orderTime = moment.utc(order.openTime);
                 return orderTime.isBetween(start, end);
             });
+            // console.log('p1');
 
-            const yesterdayOrders2 = orders.filter(order => {
-                const orderTime = moment(order.openTime);
-                return orderTime.isBetween(start, end);
-            });
-            return { validation: true, message: 'Inactividad de tradeo', parameter: 'inactivity' };
+            // const yesterdayOrders2 = orders.filter(order => {
+            //     const orderTime = moment(order.openTime);
+            //     return orderTime.isBetween(start, end);
+            // });
+            return { validation: yesterdayOrders.length > 0, message: 'Inactividad de tradeo', parameter: 'inactivity' };
         }
 
         return { validation: true, message: 'bien', parameter: 'ninguno' };

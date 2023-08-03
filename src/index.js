@@ -7,6 +7,7 @@ import routes from './route.js';
 import { PORT } from './config.js';
 import { MONGODB_NAME } from './config.js'
 import { URI_MSQL } from './config.js'
+import { URI_MSQL2 } from './config.js'
 import mysql from 'mysql2'
 
 ( async ()=>{
@@ -14,12 +15,24 @@ import mysql from 'mysql2'
     await connectDB(function(Mongoclient){
 
         var SQLClient = mysql.createConnection(URI_MSQL)
+        // try {
+            
+            var SQLClient2 = mysql.createConnection({
+                // root@:3306
+                host: '194.60.87.251',
+                user: 'root',
+                password: 'Incamega1329',
+                database: 'trafikos'
+              });
+        // } catch (error) {
+        //     console.log(error)
+        // }
 
 
         var MongoClient = Mongoclient.db(MONGODB_NAME);
         console.log("mongodb connect to "+MONGODB_NAME)
 
-        routes(app,MongoClient,SQLClient)
+        routes(app,MongoClient,SQLClient,SQLClient2)
         
         const server = http.createServer(app)
         
@@ -32,7 +45,7 @@ import mysql from 'mysql2'
                 origin:"*"
             }})
 
-            sockets(io,MongoClient,SQLClient)
+            sockets(io,MongoClient,SQLClient,SQLClient2)
 
         })
 

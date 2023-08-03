@@ -53,6 +53,25 @@ class MtAcountsController {
         }
     }
 
+    static async getAccountsBots(MongoClient, APIRestFull = true) {
+
+        let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+        let Acounts = await MtAcountsCollection.find({ "origin": AccountsType.withBot }).toArray()
+
+        let finalData = {
+
+            success: true,
+            message: "OK",
+            data: Acounts
+        }
+
+        if (APIRestFull) {
+            return res.send(finalData)
+        } else {
+            return finalData
+        }
+    }
+
 
     static async createAccountsDemoOfChallenger(MongoClient, req, res) {
 
@@ -220,8 +239,8 @@ class MtAcountsController {
                         historyOrders: await this.getHistoryOrdersByInstans(instans),
                         drawnMax: profitOfSmallestTrade2,
                         openedOrders: await this.getHistoryOpenedOrdersByInstans(instans),
-                        TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id, SQLClient),
-                        flotanteMax: await this.getFlotanteMax(acount_id, SQLClient)
+                        TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id, SQLClient, 'summary_detail_users'),
+                        flotanteMax: await this.getFlotanteMax(acount_id, SQLClient, 'summary_detail_users')
 
                     },
 
@@ -256,27 +275,135 @@ class MtAcountsController {
 
     }
 
-    static async getHistoryTraceabilitySummary(acount_id, SQLClient) {
+
+
+
+    static async getDataAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null,session = null, instans = null) {
+
+        var acount_id = req.params.acount_id
+
+        if (Acount == null) {
+            let AcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+            Acount = await AcountsCollection.findOne({ _id: ObjectID(acount_id) });
+        } else {
+
+        }
+
+           if (session == null) {
+            session = await SessionsController.getCurrentSession(MongoClient, req)
+        }
+
+
+        if (instans == null) {
+            instans = await MtInstansController.getInstansByAcountID(MongoClient, acount_id)
+            console.log('nu')
+        }
+
+        console.log(instans)
+
+        try {
+            const resp = await http.get(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`);
+
+            let historyOrders = await this.getHistoryOrdersByInstans(instans);
+            console.log('historial')
+            let profitOfSmallestTrade2 = 0;
+            let profitOfSmallestTrade = historyOrders.orders.reduce((prevTrade, currentTrade) => {
+                if (currentTrade.profit < prevTrade.profit) {
+                    return currentTrade;
+                } else {
+                    return prevTrade;
+                }
+            });
+
+            // console.log(profitOfSmallestTrade)
+
+            if (profitOfSmallestTrade.dealType != 'Balance') {
+                profitOfSmallestTrade2 = profitOfSmallestTrade.profit
+            } else {
+                profitOfSmallestTrade2 = 0;
+            }
+
+            // console.log(profitOfSmallestTrade2)
+            console.log('ye')
+            let finalData = {
+
+                success: true,
+                message: "OK",
+                data: {
+
+                    accountSummary: resp.data,
+                    historyOrders: await this.getHistoryOrdersByInstans(instans),
+                    drawnMax: profitOfSmallestTrade2,
+                    openedOrders: await this.getHistoryOpenedOrdersByInstans(instans),
+                    TraceabilitySummary: await this.getHistoryTraceabilitySummary(acount_id, SQLClient, 'trading_accounts_bots'),
+                    flotanteMax: await this.getFlotanteMax(acount_id, SQLClient, 'trading_accounts_bots')
+
+                },
+
+            }
+
+
+            console.log(`${instans.mt5_host_url}/AccountSummary?id=${instans.connectionID}`)
+
+            if (APIRestFull) {
+                return res.send(finalData)
+            } else {
+                return finalData
+            }
+
+
+        } catch (error) {
+            if (APIRestFull) {
+                return res.status(404).send('BAD_REQUEST');
+            } else {
+                console.log(error)
+                return null
+            }
+        }
+    }
+
+    static async getHistoryTraceabilitySummary(acount_id, SQLClient, table) {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
-        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by created_at desc LIMIT 60;");
+        const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM " + table + " WHERE account_id = '" + acount_id + "' order by created_at desc LIMIT 60;");
         // console.log(acount_id)
         // console.log(results)
         return results;
 
     }
-    static async getFlotanteMax(acount_id, SQLClient) {
+
+    // static async getHistoryTraceabilitySummaryAccBots(acount_id, SQLClient) {
+
+    //     const query = util.promisify(SQLClient.query).bind(SQLClient);
+    //     const results = await query("SELECT *, CAST(balance AS FLOAT) - CAST(equity AS FLOAT) AS flotante FROM trading_accounts_bots WHERE account_id = '" + acount_id + "' order by created_at desc LIMIT 60;");
+    //     // console.log(acount_id)
+    //     // console.log(results)
+    //     return results;
+
+    // }
+
+
+    static async getFlotanteMax(acount_id, SQLClient, table) {
 
         const query = util.promisify(SQLClient.query).bind(SQLClient);
-        const results = await query("SELECT balance - equity AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
+        const results = await query("SELECT balance - equity AS flotante FROM " + table + " WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
         // console.log(results);
         return results[0];
 
     }
+    // static async getFlotanteMaxAccBots(acount_id, SQLClient) {
+
+    //     const query = util.promisify(SQLClient.query).bind(SQLClient);
+    //     const results = await query("SELECT balance - equity AS flotante FROM summary_detail_users WHERE account_id = '" + acount_id + "' order by flotante desc LIMIT 1 ;");
+    //     // console.log(results);
+    //     return results[0];
+
+    // }
 
     static async getHistoryOrdersByInstans(instans) {
 
         const resp = await http.get(`${instans.mt5_host_url}/OrderHistory?id=${instans.connectionID}`);
+        // console.log(`${instans.mt5_host_url}/OrderHistory?id=${instans.connectionID}`)
         return resp.data;
 
     }

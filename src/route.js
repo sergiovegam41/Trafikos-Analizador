@@ -2,33 +2,49 @@ import LocationController from './Controllers/LocationController.js';
 import MtAcountsController from './Controllers/MtAcountsController.js';
 import SessionsController from './Controllers/SessionsController.js';
 import JourneysController from './Controllers/JourneysController.js';
+import JourneysDController2 from './Controllers/JourneysDController2.js';
 import JobOneMinController from './Controllers/JobOneMinController.js';
 import moment from "moment";
 import cron from 'node-cron';
 import EmailsController from './Controllers/EmailsController.js';
+import { DBNames } from "./db.js";
 
-export default (app, MongoClient, SQLClient) => {
+export default (app, MongoClient, SQLClient,SQLClient2) => {
 
-  console.log("Init2")
+  console.log("Init3")
 
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
     console.log('Ejecutando tarea a las 00:00 UTC.');
-    await JourneysController.validateFailUTCordersOpenAllJourneys(MongoClient, SQLClient);
+    await JourneysController.validateFailUTCordersOpenAllJourneys(MongoClient);
     await JourneysController.validateFailAllJourneys(MongoClient, SQLClient);
     await JourneysController.validateWinAllJourneys(MongoClient, SQLClient);
     console.log('fin ')
   }
 
+
+  // async function upDerivLimted() {
+  //   let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
+
+  //   const filter = {};
+  //   const update = { $set: { broker: 'Deriv Holdings (Guernsey) Limited' } };
+  
+  //   await MtAcountsCollection.updateMany(filter, update);
+  //   console.log('bien')
+  // }
+
+  // upDerivLimted()
+
   const utcMidnight = moment.utc().startOf('day');
   const serveMidnight = utcMidnight.local();
   const formattedTime = serveMidnight.format('HH');
+  console.log(formattedTime)
   cron.schedule(`0 ${formattedTime} * * *`, cronJob00UTC);
 
   setInterval(async () => {
     console.log("Ejecutando cada 1 minuto");
     await JobOneMinController.run(MongoClient, SQLClient)
-
+    await JobOneMinController.runAnalizeBots(MongoClient, SQLClient2)
   }, 60000);
 
 

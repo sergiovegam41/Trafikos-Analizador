@@ -11,7 +11,7 @@ class SoketAnalizador{
     static async run(io,clientSocket, MongoClient, SQLClient, data){
 
         let session = await SessionsController.getCurrentSession(MongoClient, {headers:{authorization: data.token}})
-        let MTAcounts = await MtAcountsController.getMyAcountByUserID(MongoClient,{headers:{authorization: data.token}}, null, false, session)
+        let MTAcounts = await MtAcountsController.getMyAcountByUserID(MongoClient,{headers:{authorization: data.token}}, null, false)
         let CurrentAcount = MTAcounts.data[0]
 
         if(!CurrentAcount){
