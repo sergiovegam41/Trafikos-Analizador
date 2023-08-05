@@ -313,11 +313,11 @@ class MtAcountsController {
                 } else {
                     return prevTrade;
                 }
-            });
+            },null);
 
             // console.log(profitOfSmallestTrade)
 
-            if (profitOfSmallestTrade.dealType != 'Balance') {
+            if (profitOfSmallestTrade!= null && profitOfSmallestTrade.dealType != 'Balance') {
                 profitOfSmallestTrade2 = profitOfSmallestTrade.profit
             } else {
                 profitOfSmallestTrade2 = 0;

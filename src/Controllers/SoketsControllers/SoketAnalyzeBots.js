@@ -83,7 +83,9 @@ class SoketAnalizadorBots {
             );
 
         }
-console.log(resp);
+
+        resp.data.nameBot = Acount.name_bot;
+console.log(Acount);
 
         clientSocket.emit("server:" + this.analize + ":data", resp)
 
