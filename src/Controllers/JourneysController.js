@@ -117,13 +117,20 @@ class JourneysController {
         // los recorremos
         for (const element of journeys) {
             console.log('~ Validar Winers ~')
+            console.log('~ Validar Winers 22 ~')
 
             // obtenemos la fecha minima de fin de la fase
+            console.log(element.date_finish_min)
             const dateFinishMin = moment(element.date_finish_min);
             // obtenemos la fecha actual
             const now = moment();
+
+            console.log(dateFinishMin)
+            console.log(now)
             // validamos si la fecha de fin es menor a la fecha actual
-            const isValidDate = dateFinishMin.isBefore(now);
+            const isValidDate = dateFinishMin.isSameOrAfter(now);
+
+         
 
             // Validar solo los journeys que tienen los dias minimos tradeados
             if (isValidDate) {
@@ -244,10 +251,10 @@ class JourneysController {
     }
 
     static async validateFailAllJourneys(MongoClient, SQLClient) {
-
+        console.log('JOURNEYS');
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
-        console.log('JOURNEYS');
+
         console.log(journeys)
 
 
@@ -314,13 +321,15 @@ class JourneysController {
             if (!isFailed) {
                 console.log('[VALIDACION CONDICION]');
                 let parametro = await parametrosCollection.findOne({ _id: ObjectID(condition.parameter) });
+                console.log('[VALIDACION CONDICION1]');
                 let valFailed = await this.isFailed(parametro.name, condition, AccountData)
-                if (valFailed.validation) {
+                console.log('[VALIDACION CONDICION2]');
+                console.log(valFailed)
+                if (valFailed.validation === false) {
                     console.log('[PERDIO ' + valFailed.message + ' ' + valFailed.parameter + ']');
                     isFailed = true;
                     motivoFailed = valFailed.message;
                     parameterFailed = valFailed.parameter;
-                    break;
                 }
             }
 
@@ -349,6 +358,12 @@ class JourneysController {
         if (isValidDate) {
             const orders = AccountData.data.historyOrders.orders;
 
+            console.log('VAL ORDERS');
+            console.log(orders);
+            console.log('VAL ORDERS');
+
+
+
             // Obtener fecha/hora de inicio y fin del día anterior
             const start = moment().utc().subtract(1, 'day').startOf('day').add(1, 'minute');
             const end = moment().utc().subtract(1, 'day').endOf('day');
@@ -358,7 +373,12 @@ class JourneysController {
                 const orderTime = moment(order.openTime);
                 return orderTime.isBetween(start, end);
             });
-            return { validation: yesterdayOrders.length > 0, message: 'Inactividad de tradeo', parameter: 'inactivity' };
+
+            const yesterdayOrders2 = orders.filter(order => {
+                const orderTime = moment(order.openTime);
+                return orderTime.isBetween(start, end);
+            });
+            return { validation: true, message: 'Inactividad de tradeo', parameter: 'inactivity' };
         }
 
         return { validation: true, message: 'bien', parameter: 'ninguno' };
@@ -380,20 +400,44 @@ class JourneysController {
     }
 
     static async isFailed(parametro, condition, AccountData) {
+        try {
+            console.log('parametro')
+            console.log('[VALIDACION ISFAILED]');
 
-        let b = null;
-        switch (parametro) {
-            case 'Flotante':
-                b = AccountData.data.flotanteMax.flotante ?? 0;
-            case 'DrawnMax':
-                b = AccountData.data.drawnMax ?? 0;
-            case 'Equidad':
-                b = AccountData.data.accountSummary.equity;
-            case 'Profit':
-                b = AccountData.data.accountSummary.profit;
+
+            let b = null;
+
+            switch (parametro) {
+
+                case 'Flotante':
+                    console.log('Flotante')
+                    b = AccountData.data.flotanteMax.flotante ?? 0;
+                case 'DrawnMax':
+                    console.log('DrawnMax')
+                    b = AccountData.data.drawnMax ?? 0;
+                case 'Equidad':
+                    console.log('Equidad')
+                    b = AccountData.data.accountSummary.equity;
+                case 'Profit':
+                    console.log('Profit')
+                    b = AccountData.data.accountSummary.profit;
+            }
+
+            let ejecucion = true;
+            try {
+                ejecucion = (vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`))
+            } catch (error) {
+                console.log(error)
+            }
+
+
+            return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a  ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
+        } catch (error) {
+            console.log(error)
+            return { validation: true, message: `ninguno `, parameter: 'n' }
+
         }
 
-        return { validation: !(vm.runInNewContext(`${condition.value} ${condition.conditional} ${b}`)), message: `el ${parametro} es ${condition.conditional} a  ${b}, HAZ PERDIDO :( `, parameter: parametro }
     }
 
 
