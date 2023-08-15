@@ -108,7 +108,7 @@ class JourneysController {
 
 
 
-    static async validateWinAllJourneys(MongoClient, SQLClient) {
+    static async validateWinAllJourneys(MongoClient, SQLClient, SQLClient2) {
 
         // traemos los viajes pendientes para validar
         let journeys_collection = MongoClient.collection(DBNames.journey);
@@ -258,7 +258,7 @@ class JourneysController {
         }
     }
 
-    static async validateFailAllJourneys(MongoClient, SQLClient) {
+    static async validateFailAllJourneys(MongoClient, SQLClient, SQLClient2) {
         console.log('JOURNEYS');
         let journeys_collection = MongoClient.collection(DBNames.journey);
         let journeys = await journeys_collection.find({ status: Journeys.pendiente }).toArray()
@@ -267,7 +267,7 @@ class JourneysController {
 
 
         for (const element of journeys) {
-            let val = await this.validateOne(MongoClient, SQLClient, element);
+            let val = await this.validateOne(MongoClient, SQLClient, element, SQLClient2);
             // console.log(val)
             if (!val.validation) {
 
@@ -297,13 +297,13 @@ class JourneysController {
             // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
             let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
             let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(element.current_account) });
-          
+
             const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
-          
+
             let validationUTC = await MtAcountsController.validateOrdersInProgressAfterUTC(MongoClient,
                 account_by_journey._id.toString(),
                 '00:00', instans);
-          
+
             // validacion negativa
             console.log(validationUTC);
             if (validationUTC) {
@@ -323,7 +323,7 @@ class JourneysController {
         console.log('[NO HAY ORDENES ABIERTAS TODO OK]');
     }
 
-    static async validateOne(MongoClient, SQLClient, journey) {
+    static async validateOne(MongoClient, SQLClient, journey, SQLClient2) {
         console.log('[VALIDAR FINAL DEL VIAJE]');
         let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
         let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(journey.current_account) });
@@ -345,6 +345,15 @@ class JourneysController {
         // preparar colleccion de parametros
         let parametrosCollection = MongoClient.collection(DBNames.parametros);
         let AccountData = await this.getData(MongoClient, SQLClient, account_by_journey, instans)
+
+        console.log(AccountData)
+
+        SQLClient.query(
+            "insert into data_day_to_day  (profit,journey_id) values(" + AccountData.data.accountSummary.profit + "," + journey._id + ");",
+            function (err, results, fields) {
+                console.log("[Success2]")
+            }
+        );
 
         console.log('[VALIDAR TRADEO DIARIO]');
         let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData, journey)
@@ -444,11 +453,9 @@ class JourneysController {
             console.log('parametro')
             console.log('[VALIDACION ISFAILED]');
 
-
             let b = null;
 
             switch (parametro) {
-
                 case 'Flotante':
                     console.log('Flotante')
                     b = AccountData.data.flotanteMax.flotante;
@@ -461,18 +468,16 @@ class JourneysController {
                 case 'Profit':
                     console.log('Profit')
                     b = AccountData.data.accountSummary.profit;
-
             }
 
             console.log(b)
-
             let ejecucion = false;
             try {
                 ejecucion = (vm.runInNewContext(` ${b} ${condition.conditional} ${condition.value}`))
             } catch (error) {
                 // console.log(error)
+                ejecucion = false;
             }
-
 
             return { validation: ejecucion, message: `el ${parametro} es ${condition.conditional} a ${condition.value}, tienes ${b} de ${parametro}  HAZ PERDIDO :( `, parameter: parametro }
         } catch (error) {

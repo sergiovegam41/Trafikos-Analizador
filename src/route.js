@@ -9,7 +9,7 @@ import cron from 'node-cron';
 import EmailsController from './Controllers/EmailsController.js';
 import { DBNames } from "./db.js";
 
-export default (app, MongoClient, SQLClient,SQLClient2) => {
+export default (app, MongoClient, SQLClient, SQLClient2) => {
 
   console.log("Init3")
 
@@ -17,7 +17,7 @@ export default (app, MongoClient, SQLClient,SQLClient2) => {
   async function cronJob00UTC() {
     console.log('Ejecutando tarea a las 00:00 UTC.');
     await JourneysController.validateFailUTCordersOpenAllJourneys(MongoClient);
-    await JourneysController.validateFailAllJourneys(MongoClient, SQLClient);
+    await JourneysController.validateFailAllJourneys(MongoClient, SQLClient, SQLClient2);
     await JourneysController.validateWinAllJourneys(MongoClient, SQLClient);
     console.log('fin ')
   }
@@ -28,7 +28,7 @@ export default (app, MongoClient, SQLClient,SQLClient2) => {
 
   //   const filter = {};
   //   const update = { $set: { broker: 'Deriv Holdings (Guernsey) Limited' } };
-  
+
   //   await MtAcountsCollection.updateMany(filter, update);
   //   console.log('bien')
   // }
@@ -65,28 +65,22 @@ export default (app, MongoClient, SQLClient,SQLClient2) => {
   app.get('/api/getMyAcounts', validationMiddleware, async (req, res) => MtAcountsController.getMyAcountByUserID(MongoClient, req, res))
   app.get('/api/inizialiteJourneyById', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
   app.get('/api/AccountSummary/:acount_id', validationMiddleware, async (req, res) => JourneysController.inizialiteById(MongoClient, req, res))
-
   app.post('/api/createAccountsDemoOfChallenger', validationMiddleware, async (req, res) => MtAcountsController.createAccountsDemoOfChallenger(MongoClient, req, res, "0"));
 
 
   async function validationMiddleware(req, res, next) {
-
     try {
-
       let session = await SessionsController.getCurrentSession(MongoClient, req)
-
       if (session) {
-
         return next()
-
       }
-
     } catch (error) {
       return res.status(404).send('BAD_REQUEST');
     }
     return res.status(404).send('BAD_REQUEST');
-
   }
+
+  
 }
 
 
