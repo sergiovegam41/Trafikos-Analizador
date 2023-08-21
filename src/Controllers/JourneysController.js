@@ -3,6 +3,7 @@ import SessionsController from "./SessionsController.js";
 import http from 'axios';
 import { ObjectID, ObjectId } from 'mongodb';
 import moment from "moment";
+import util from "util";
 // import fs  from "fs ";
 import vm from "vm";
 import MtInstansController from "./MtInstansController.js";
@@ -14,6 +15,7 @@ import EmailsController from './EmailsController.js';
 import { Journeys } from "../models/JourneysStatus.js";
 
 class JourneysController {
+
     // static journeys_collection = MongoClient.collection(DBNames.MtAcounts);
 
     static async createByAccount(MongoClient, req, current_Account_Demo, sortin = "0") {
@@ -120,7 +122,7 @@ class JourneysController {
             console.log('~ Validar Winers 22 ~')
 
             // obtenemos la fecha minima de fin de la fase
-            console.log(element.date_finish_min)
+            // console.log(element.date_finish_min)
             const dateFinishMin = moment(element.date_finish_min);
             // obtenemos la fecha actual
             const now = moment();
@@ -296,7 +298,10 @@ class JourneysController {
 
             // obtener la validacion de ordenes abiertas a las 00:00 UTC de esta cuenta
             let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
-            let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectID(element.current_account) });
+            let account_by_journey = await MtAcountsCollection.findOne({ _id: ObjectId(element.current_account) });
+
+            // console.log(element._id)
+            // console.log(account_by_journey)
 
             const instans = await MtInstansController.getInstansByAcountID(MongoClient, account_by_journey._id.toString());
 
@@ -345,15 +350,48 @@ class JourneysController {
         // preparar colleccion de parametros
         let parametrosCollection = MongoClient.collection(DBNames.parametros);
         let AccountData = await this.getData(MongoClient, SQLClient, account_by_journey, instans)
+        console.log('[DATA accsum]');
+        // console.log(AccountData)
+        console.log('[DATA accsum]');
 
-        console.log(AccountData)
+        try {
+            const currentDate = moment().utc().format('YYYY-MM-DD HH:mm:ss');
+            SQLClient2.query(
+                `INSERT INTO data_day_to_day (profit, journey_id, created_at) VALUES (${AccountData.data.accountSummary.profit}, '${journey._id}', '${currentDate}')`,
+                function (err, results, fields) {
+                    console.log("[Success2]")
+                }
+            );
+            console.log('bien')
+        } catch (error) {
+            console.log('mal')
+        }
 
-        SQLClient.query(
-            "insert into data_day_to_day  (profit,journey_id) values(" + AccountData.data.accountSummary.profit + "," + journey._id + ");",
-            function (err, results, fields) {
-                console.log("[Success2]")
-            }
-        );
+        let phases_colelction = MongoClient.collection(DBNames.phases);
+
+        let challenger_collection = MongoClient.collection(DBNames.challengers);
+        console.log('validateProfitNegativeLimitAcumulated')
+
+        let phase = await phases_colelction.findOne({ _id: ObjectId(journey.current_phase) });
+        let challenger = await challenger_collection.findOne({ _id: ObjectId(phase.challenge_id) });
+
+        if (challenger.limit_profit_negative_acumulated === '1') {
+            const queryAsync = util.promisify(SQLClient2.query).bind(SQLClient2);
+            let validateLimitNegativeProfit = this.validateProfitNegativeLimitAcumulated(SQLClient2, journey, parseFloat(phase.drawn_acumulated_limit), queryAsync)
+            if (validateLimitNegativeProfit.validation) return { validation: false, message: validateDailyTrade.message, parameter: validateDailyTrade.parameter };
+        }
+        console.log('validateProfitNegativeLimitAcumulate2')
+
+
+        console.log('validateProfitPositiveLimitDaily')
+        if (challenger.limit_profit_negative_acumulated === '1') {
+            if (parseFloat(AccountData.data.accountSummary.profit) >= parseFloat(phase.profit_positive_daily_limit.toString())) return { validation: false, message: 'Limite de ganancia positiva diara alcanzada, obtuvo: ' + AccountData.data.accountSummary.profit, parameter: 'Ganancia Diaria Maxima' };
+        }
+
+        console.log(AccountData.data.accountSummary.profit)
+        console.log(phase.profit_positive_daily_limit.toString())
+        console.log('validateProfitPositiveLimitDaily')
+
 
         console.log('[VALIDAR TRADEO DIARIO]');
         let validateDailyTrade = await this.validateDailyTrade(MongoClient, SQLClient, AccountData, journey)
@@ -390,6 +428,82 @@ class JourneysController {
 
         return { validation: true, message: 'no ha perdido', parameter: null };
     }
+
+    static async validateProfitNegative(MongoClient, SQLClient, AccountData, journey) {
+
+    }
+
+
+
+    static async validateProfitNegativeLimitAcumulated(SQLClient2, journey, validation, queryAsync) {
+        try {
+            const query = `SELECT SUM(profit) AS total_negative_profit FROM data_day_to_day WHERE profit < 0 AND journey_id='${journey._id}'`;
+
+            const results = await queryAsync(query)
+            console.log('VAL PROFIT NEGATIVE');
+            console.log(parseFloat(results[0].total_negative_profit.toString()) <= parseFloat(validation.toString()));
+            console.log('VAL PROFIT NEGATIVE');
+
+            return { validation: (parseFloat(results[0].total_negative_profit.toString()) <= parseFloat(validation.toString())), message: 'Limite de ganancia negativa alcanzada', parameter: 'drawn' };
+        } catch (error) {
+            console.log(error)
+        }
+    }
+    static async validateProfitPositiveLimitDaily(SQLClient2, journey, validation, queryAsync) {
+        try {
+            const query = `SELECT SUM(profit) AS total_negative_profit FROM data_day_to_day WHERE profit < 0 AND journey_id='${journey._id}'`;
+
+            const results = await queryAsync(query)
+            console.log('VAL PROFIT NEGATIVE');
+            console.log(parseFloat(results[0].total_negative_profit.toString()) <= parseFloat(validation.toString()));
+            console.log('VAL PROFIT NEGATIVE');
+
+            return { validation: (parseFloat(results[0].total_negative_profit.toString()) <= parseFloat(validation.toString())), message: 'Limite de ganancia negativa alcanzada', parameter: 'drawn' };
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    static async validateProfitLimitOfNumberDays(SQLClient2) {
+        // Obtén la fecha actual en formato UTC
+        const fechaActual = moment().utc();
+
+        // Resta 4 días a la fecha actual para obtener la fecha límite
+        const fechaLimite = fechaActual.clone().subtract(4, 'days');
+
+        // Convierte las fechas al formato requerido por MySQL (YYYY-MM-DD HH:mm:ss)
+        const fechaActualFormatted = fechaActual.format('YYYY-MM-DD HH:mm:ss');
+        const fechaLimiteFormatted = fechaLimite.format('YYYY-MM-DD HH:mm:ss');
+
+        // Consulta para obtener los registros de los últimos 3 días
+        const query = `SELECT * FROM data_day_to_day WHERE created_at >= '${fechaLimiteFormatted}' AND created_at < '${fechaActualFormatted}' and profit<0`;
+
+        // Ejecuta la consulta
+        SQLClient2.query(query, function (err, results, fields) {
+            if (err) {
+                console.error(err);
+            } else {
+                // Maneja los resultados obtenidos
+                console.log('Registros de los últimos 3 días:');
+                console.log(results);
+                let suma = -0;
+                for (const days of results) {
+                    console.log(days)
+                    suma += days.profit
+                }
+
+                console.log(suma)
+
+                return results
+            }
+        });
+    }
+
+    // static async validateProfitLimitOfNumberDays(MongoClient, SQLClient) {
+    //     console.log('si existe la funcion')
+
+    // }
+
 
     static async validateDailyTrade(MongoClient, SQLClient, AccountData, journey) {
         // console.log('p1');

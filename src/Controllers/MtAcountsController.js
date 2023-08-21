@@ -278,7 +278,7 @@ class MtAcountsController {
 
 
 
-    static async getDataAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null,session = null, instans = null) {
+    static async getDataAcountByID(MongoClient, req, res, SQLClient, APIRestFull = true, Acount = null, session = null, instans = null) {
 
         var acount_id = req.params.acount_id
 
@@ -289,7 +289,7 @@ class MtAcountsController {
 
         }
 
-           if (session == null) {
+        if (session == null) {
             session = await SessionsController.getCurrentSession(MongoClient, req)
         }
 
@@ -313,11 +313,11 @@ class MtAcountsController {
                 } else {
                     return prevTrade;
                 }
-            },null);
+            }, null);
 
             // console.log(profitOfSmallestTrade)
 
-            if (profitOfSmallestTrade!= null && profitOfSmallestTrade.dealType != 'Balance') {
+            if (profitOfSmallestTrade != null && profitOfSmallestTrade.dealType != 'Balance') {
                 profitOfSmallestTrade2 = profitOfSmallestTrade.profit
             } else {
                 profitOfSmallestTrade2 = 0;

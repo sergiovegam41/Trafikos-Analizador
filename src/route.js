@@ -15,13 +15,19 @@ export default (app, MongoClient, SQLClient, SQLClient2) => {
 
   // Tarea a ejecutar a las 00:00 UTC
   async function cronJob00UTC() {
-    console.log('Ejecutando tarea a las 00:00 UTC.');
+    console.log('Ejecutando tarea a las 00:00 UTC. men');
+  try {
     await JourneysController.validateFailUTCordersOpenAllJourneys(MongoClient);
     await JourneysController.validateFailAllJourneys(MongoClient, SQLClient, SQLClient2);
     await JourneysController.validateWinAllJourneys(MongoClient, SQLClient);
+  } catch (error) {
+    console.log(error)
+  }
     console.log('fin ')
   }
 
+  // let e = -520;
+ 
 
   // async function upDerivLimted() {
   //   let MtAcountsCollection = MongoClient.collection(DBNames.MtAcounts);
@@ -80,7 +86,7 @@ export default (app, MongoClient, SQLClient, SQLClient2) => {
     return res.status(404).send('BAD_REQUEST');
   }
 
-  
+
 }
 
 
